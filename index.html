@@ -1,0 +1,2582 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fiche Pédagogique d'une séance — Espace π</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- JSZip for parsing uploaded .pptx slide decks -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- Google Fonts: Inter + Caveat / Dancing Script for pedagogical accents -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg-canvas: #eef1f5;
+      --surface-card: #ffffff;
+      --ink-primary: #111625;
+      --ink-secondary: #5a6272;
+      --accent-blue: #1857b8;
+      --accent-blue-hover: #134696;
+      --border-subtle: #c7cdd8;
+      --table-header-blue: #4f81bd;
+      --table-border: #3a608f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--ink-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 16px 12px 32px;
+      position: relative;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(24, 87, 184, 0.06), transparent 42%),
+        radial-gradient(circle at 88% 92%, rgba(79, 129, 189, 0.08), transparent 45%),
+        var(--bg-canvas);
+    }
+
+    .main-card {
+      width: 100%;
+      max-width: 980px;
+      background: var(--surface-card);
+      border-radius: 28px;
+      box-shadow: 0 18px 45px rgba(17, 22, 37, 0.08), 0 2px 8px rgba(17, 22, 37, 0.04);
+      border: 1px solid rgba(199, 205, 216, 0.65);
+      padding: 22px 20px 28px;
+      min-height: 540px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    @media (min-width: 640px) {
+      .app-shell {
+        padding: 28px 20px 44px;
+      }
+      .main-card {
+        padding: 28px 32px 36px;
+        border-radius: 32px;
+      }
+    }
+
+    @keyframes screenFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .screen-enter {
+      animation: screenFadeIn 0.22s ease-out both;
+    }
+
+    /* Borderless outer worksheet sheet with crisp inner table borders */
+    #fiche-editable-sheet {
+      width: 100%;
+      background: #ffffff;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      padding: 4px 0 12px;
+      font-family: 'Comic Sans MS', 'Segoe UI', cursive, sans-serif;
+      color: #111625;
+      font-size: 12.5px;
+      line-height: 1.42;
+    }
+
+    .fiche-accent {
+      font-family: 'Caveat', 'Dancing Script', 'Comic Sans MS', cursive;
+      font-weight: 700;
+    }
+
+    .fiche-guillemets {
+      font-weight: 800;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .fiche-extracted-underline {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    table.pedago-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      border: 1.5px solid var(--table-border);
+      background: #ffffff;
+    }
+
+    table.pedago-table th,
+    table.pedago-table td {
+      border: 1px solid var(--table-border);
+      padding: 7px 8px;
+      vertical-align: top;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .row-header-blue {
+      background-color: var(--table-header-blue);
+      color: #ffffff;
+      font-weight: 700;
+      text-align: center;
+      vertical-align: middle !important;
+    }
+
+    .row-header-white {
+      background-color: #ffffff;
+      color: #111625;
+      font-weight: 700;
+    }
+
+    .col-etapes {
+      background-color: #6b9ac4;
+      color: #ffffff;
+      font-weight: 700;
+      text-align: center;
+      vertical-align: middle !important;
+    }
+
+    [contenteditable="true"] {
+      outline: 1.5px dashed rgba(24, 87, 184, 0.45);
+      border-radius: 4px;
+      background-color: rgba(24, 87, 184, 0.03);
+    }
+
+    [contenteditable="true"]:focus {
+      outline: 2px solid #1857b8;
+      background-color: rgba(24, 87, 184, 0.06);
+    }
+
+    /* Natural multi-page A4 print flow */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 10mm 10mm 12mm 10mm;
+      }
+
+      html, body {
+        background: #ffffff !important;
+        min-height: auto !important;
+        overflow: visible !important;
+      }
+
+      .app-shell {
+        padding: 0 !important;
+        background: #ffffff !important;
+        display: block !important;
+        min-height: auto !important;
+      }
+
+      .main-card {
+        max-width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        min-height: auto !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      #fiche-editable-sheet {
+        border: none !important;
+        padding: 0 !important;
+        font-size: 11px !important;
+        line-height: 1.35 !important;
+      }
+
+      [contenteditable="true"] {
+        outline: none !important;
+        background: transparent !important;
+      }
+
+      table.pedago-table {
+        page-break-inside: auto;
+      }
+
+      table.pedago-table tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      table.pedago-table thead {
+        display: table-header-group;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="app-shell"></div>
+
+  <script>
+    /**
+     * Espace π — Fiche Pédagogique d'une séance
+     * Self-contained single-file application with immediate window.renderApp() execution.
+     */
+
+    const STORAGE_KEYS = {
+      USERS: 'espace_pi_users_v1',
+      API_KEY: 'espace_pi_gemini_api_key_v1',
+      SAVED_FICHES: 'espace_pi_saved_fiches_v1',
+      SESSION: 'espace_pi_session_v1'
+    };
+
+    const DEFAULT_USERS = [
+      {
+        id: 'u_admin',
+        username: 'admin',
+        password: '123',
+        role: 'admin',
+        frozen: false
+      },
+      {
+        id: 'u_prof1',
+        username: 'prof',
+        password: '123',
+        role: 'user',
+        frozen: false
+      },
+      {
+        id: 'u_prof2',
+        username: 'enseignant',
+        password: '456',
+        role: 'user',
+        frozen: false
+      }
+    ];
+
+    /**
+     * Safely parses JSON strings with a deterministic fallback.
+     */
+    function safeJsonParse(raw, fallback) {
+      try {
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+      } catch (_err) {
+        return fallback;
+      }
+    }
+
+    /**
+     * Reads stored users from localStorage or seeds default accounts.
+     */
+    function readUsersFromStorage() {
+      try {
+        const parsed = safeJsonParse(localStorage.getItem(STORAGE_KEYS.USERS), null);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(DEFAULT_USERS));
+      } catch (err) {
+        console.warn('localStorage users fallback:', err);
+      }
+      return DEFAULT_USERS.map((u) => ({ ...u }));
+    }
+
+    /**
+     * Persists user records to localStorage safely.
+     */
+    function writeUsersToStorage(users) {
+      try {
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+      } catch (err) {
+        console.warn('Failed saving users to localStorage:', err);
+      }
+    }
+
+    /**
+     * Reads Gemini API key from localStorage safely.
+     */
+    function readApiKeyFromStorage() {
+      try {
+        return (localStorage.getItem(STORAGE_KEYS.API_KEY) || '').trim();
+      } catch (_err) {
+        return '';
+      }
+    }
+
+    /**
+     * Persists Gemini API key to localStorage safely.
+     */
+    function writeApiKeyToStorage(key) {
+      try {
+        localStorage.setItem(STORAGE_KEYS.API_KEY, (key || '').trim());
+      } catch (err) {
+        console.warn('Failed saving API key to localStorage:', err);
+      }
+    }
+
+    /**
+     * Reads saved fiches from localStorage safely.
+     */
+    function readLocalSavedFichesList() {
+      try {
+        const parsed = safeJsonParse(localStorage.getItem(STORAGE_KEYS.SAVED_FICHES), []);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_err) {
+        return [];
+      }
+    }
+
+    /**
+     * Persists saved fiches list to localStorage safely.
+     */
+    function writeLocalSavedFichesList(list) {
+      try {
+        localStorage.setItem(STORAGE_KEYS.SAVED_FICHES, JSON.stringify(list));
+      } catch (err) {
+        console.warn('Failed saving fiches to localStorage:', err);
+      }
+    }
+
+    /**
+     * Reads active session from localStorage safely.
+     */
+    function readSessionFromStorage() {
+      try {
+        return safeJsonParse(localStorage.getItem(STORAGE_KEYS.SESSION), null);
+      } catch (_err) {
+        return null;
+      }
+    }
+
+    /**
+     * Writes or clears active session in localStorage safely.
+     */
+    function writeSessionToStorage(sessionObj) {
+      try {
+        if (sessionObj) {
+          localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(sessionObj));
+        } else {
+          localStorage.removeItem(STORAGE_KEYS.SESSION);
+        }
+      } catch (err) {
+        console.warn('Failed writing session to localStorage:', err);
+      }
+    }
+
+    const initialUsers = readUsersFromStorage();
+    const initialSession = readSessionFromStorage();
+    const validSessionUser =
+      initialSession && initialSession.username
+        ? initialUsers.find(
+            (u) =>
+              String(u.username).toLowerCase() === String(initialSession.username).toLowerCase() &&
+              !u.frozen
+          )
+        : null;
+
+    /**
+     * Central application state.
+     */
+    const state = {
+      screen: validSessionUser ? (validSessionUser.role === 'admin' ? 'admin' : 'accueil') : 'login',
+      currentUser: validSessionUser || null,
+      isAdmin: Boolean(validSessionUser && validSessionUser.role === 'admin'),
+      loginError: '',
+
+      users: initialUsers,
+      apiKey: readApiKeyFromStorage(),
+      adminFilterActiveOnly: false,
+      showApiKeyModal: false,
+      showAddUserForm: false,
+
+      showSectionChooser: false,
+      showReadyFichesModal: false,
+      openedFromReadyFiches: false,
+      savedFiches: readLocalSavedFichesList(),
+      selectedSection: 'premier pages', // 'premier pages' | 'Autre Seance' | 'Consolidation'
+
+      uploadedFile: null,
+      uploadedImageDataUrl: '',
+      parsedSlides: [],
+      isAnalyzing: false,
+      analysisError: '',
+
+      generatedFiche: null,
+      originalFicheBackup: null,
+      ficheEditEnabled: false,
+
+      toastMessage: '',
+      toastType: 'info'
+    };
+
+    let toastTimer = null;
+
+    /**
+     * Displays a non-blocking notification toast (never uses alert() or confirm()).
+     */
+    function showToast(message, type = 'info') {
+      state.toastMessage = String(message || '');
+      state.toastType = type;
+      if (toastTimer) clearTimeout(toastTimer);
+      const toastEl = document.getElementById('app-toast-banner');
+      if (toastEl) {
+        toastEl.textContent = state.toastMessage;
+        toastEl.className = getToastClass(type);
+        toastEl.classList.remove('hidden');
+      }
+      toastTimer = setTimeout(() => {
+        state.toastMessage = '';
+        const el = document.getElementById('app-toast-banner');
+        if (el) el.classList.add('hidden');
+      }, 3600);
+    }
+
+    /**
+     * Maps toast types to Tailwind utility classes.
+     */
+    function getToastClass(type) {
+      const base =
+        'no-print fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold shadow-lg border transition-all max-w-[90vw] text-center';
+      if (type === 'success') return `${base} bg-emerald-600 text-white border-emerald-700`;
+      if (type === 'warning') return `${base} bg-amber-500 text-white border-amber-600`;
+      if (type === 'error') return `${base} bg-rose-600 text-white border-rose-700`;
+      return `${base} bg-[#111625] text-white border-slate-700`;
+    }
+
+    /**
+     * Escapes HTML characters safely.
+     */
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /**
+     * Removes Arabic characters so French worksheet copy stays consistent.
+     */
+    function stripArabic(text) {
+      return String(text || '')
+        .replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    /**
+     * Normalizes titles for case-insensitive duplicate checking.
+     */
+    function normalizeFicheTitleKey(title) {
+      return String(title || '')
+        .replace(/^«|»$/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+    }
+
+    /**
+     * Extracts clean base filename (without extension) from an uploaded PPT/file name.
+     */
+    function getUploadedPptBaseTitle(fileName, fallbackLabel = '') {
+      const cleanedFile = stripArabic(
+        String(fileName || '')
+          .replace(/\.[^.]+$/, '')
+          .replace(/[_-]+/g, ' ')
+          .replace(/[\\/:*?"<>|]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+      );
+      if (cleanedFile) return cleanedFile;
+      return stripArabic(String(fallbackLabel || '').replace(/^«|»$/g, '').trim()) || 'fiche-pedagogique';
+    }
+
+    /**
+     * Computes canonical title used for saving, duplicate detection ('deja exist'), and display.
+     */
+    function getCanonicalFicheTitle(fiche, sectionName, fallbackFileName = '') {
+      const isConsol = Boolean(fiche?.isConsolidation) || sectionName === 'Consolidation';
+      if (isConsol) {
+        const rawTitle = String(fiche?.titre_de_tache || '').trim();
+        const numMatch = rawTitle.match(/consolidation\s*(\d+)/i);
+        const num = numMatch?.[1]
+          ? numMatch[1]
+          : String(fiche?.numero_tache || '1').replace(/[^\d]/g, '') || '1';
+        return rawTitle || `Consolidation ${num}`;
+      }
+      if (fiche?.pptTitle) {
+        return getUploadedPptBaseTitle(fiche.pptTitle, fiche?.titre_de_tache);
+      }
+      if (fallbackFileName) {
+        return getUploadedPptBaseTitle(fallbackFileName, fiche?.titre_de_tache);
+      }
+      return String(fiche?.titre_de_tache || sectionName || 'fiche-pedagogique')
+        .replace(/^«|»$/g, '')
+        .trim();
+    }
+
+    /**
+     * Builds export filename: "Consolidation <numéro>.htm" or "<PPT_Title>.htm".
+     */
+    function buildFicheHtmFileName(fiche, sectionName) {
+      const isConsol = Boolean(fiche?.isConsolidation) || sectionName === 'Consolidation';
+      if (isConsol) {
+        const rawTitle = String(fiche?.titre_de_tache || '').trim();
+        const numMatch = rawTitle.match(/consolidation\s*(\d+)/i);
+        const num = numMatch?.[1]
+          ? numMatch[1]
+          : String(fiche?.numero_tache || '1').replace(/[^\d]/g, '') || '1';
+        return `Consolidation ${num}.htm`;
+      }
+      const pptTitle =
+        getCanonicalFicheTitle(fiche, sectionName)
+          .replace(/[\\/:*?"<>|]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim() || 'fiche-pedagogique';
+      return `${pptTitle}.htm`;
+    }
+
+    /**
+     * Saves a fiche to localStorage and optional Firestore collection.
+     */
+    async function persistSavedFicheRecord(record) {
+      const list = readLocalSavedFichesList();
+      const updated = [record, ...list];
+      writeLocalSavedFichesList(updated);
+      state.savedFiches = updated;
+
+      if (window.db && typeof window.db.collection === 'function') {
+        try {
+          await window.db.collection('fiches_techniques').doc(record.id).set(record);
+        } catch (err) {
+          console.warn('Firestore save fallback to localStorage:', err);
+        }
+      }
+    }
+
+    /**
+     * Deletes a fiche from localStorage and optional Firestore collection.
+     */
+    async function deleteSavedFicheRecord(id) {
+      const updated = state.savedFiches.filter((item) => String(item.id) !== String(id));
+      writeLocalSavedFichesList(updated);
+      state.savedFiches = updated;
+
+      if (window.db && typeof window.db.collection === 'function') {
+        try {
+          await window.db.collection('fiches_techniques').doc(String(id)).delete();
+        } catch (err) {
+          console.warn('Firestore delete fallback to localStorage:', err);
+        }
+      }
+    }
+
+    /**
+     * Loads saved fiches from Firestore if available.
+     */
+    async function hydrateFromFirestore() {
+      if (!window.db || typeof window.db.collection !== 'function') return;
+      try {
+        const snap = await window.db.collection('fiches_techniques').get();
+        if (snap && snap.docs) {
+          const remoteItems = snap.docs
+            .map((d) => (typeof d.data === 'function' ? d.data() : d))
+            .filter((item) => item && item.id);
+          if (remoteItems.length > 0) {
+            const mergedMap = new Map();
+            [...remoteItems, ...state.savedFiches].forEach((item) => {
+              mergedMap.set(String(item.id), item);
+            });
+            const merged = Array.from(mergedMap.values());
+            writeLocalSavedFichesList(merged);
+            state.savedFiches = merged;
+            window.renderApp();
+          }
+        }
+      } catch (err) {
+        console.warn('Firestore hydration skipped:', err);
+      }
+    }
+
+    /**
+     * Switches view and renders immediately.
+     */
+    function navigateTo(screenName) {
+      state.screen = screenName;
+      window.renderApp();
+    }
+
+    /**
+     * Parses a .pptx file using JSZip into structured slide objects.
+     */
+    async function parsePptxFile(file) {
+      if (!window.JSZip) {
+        throw new Error('La bibliothèque JSZip n’est pas disponible.');
+      }
+      const arrayBuffer = await file.arrayBuffer();
+      const zip = await window.JSZip.loadAsync(arrayBuffer);
+      const slideEntries = Object.keys(zip.files)
+        .filter((name) => /^ppt\/slides\/slide\d+\.xml$/i.test(name))
+        .sort((a, b) => {
+          const numA = parseInt((a.match(/slide(\d+)\.xml/i) || [])[1] || '0', 10);
+          const numB = parseInt((b.match(/slide(\d+)\.xml/i) || [])[1] || '0', 10);
+          return numA - numB;
+        });
+
+      const slides = [];
+      for (let i = 0; i < slideEntries.length; i++) {
+        const xmlText = await zip.files[slideEntries[i]].async('string');
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+        const textNodes = Array.from(xmlDoc.getElementsByTagNameNS('*', 't'));
+        const slideLines = textNodes
+          .map((node) => (node.textContent || '').trim())
+          .filter(Boolean);
+        slides.push({
+          slideNumber: i + 1,
+          lines: slideLines,
+          text: slideLines.join(' ')
+        });
+      }
+      return slides;
+    }
+
+    /**
+     * Reads a file as a base64 Data URL.
+     */
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('Erreur lors de la lecture du fichier image.'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /**
+     * Prefixes préparatoire items with "- ".
+     */
+    function formatPreparatoireLines(items, fallbackLine) {
+      const source = Array.isArray(items) && items.length > 0 ? items : [fallbackLine];
+      return source
+        .map((line) => stripArabic(String(line || '').replace(/^[•\-–—*]\s*/, '').trim()))
+        .filter(Boolean)
+        .map((line) => `- ${line}`);
+    }
+
+    /**
+     * Formats guidée activity lines with "- " prefix and lesson/rule phrasing.
+     */
+    function formatGuidéeLines(items, lessonTitle, ruleText) {
+      const cleanLesson =
+        stripArabic(String(lessonTitle || '').replace(/^«|»$/g, '').trim()) || 'la notion étudiée';
+      const cleanRule = stripArabic(String(ruleText || '').trim());
+      const suffix = cleanRule ? cleanRule : `en appliquant ${cleanLesson}`;
+      const source =
+        Array.isArray(items) && items.length > 0
+          ? items
+          : ['Traiter l’exemple guidé collectivement'];
+      return source
+        .map((raw) => stripArabic(String(raw || '').replace(/^[•\-–—*]\s*/, '').trim()))
+        .filter(Boolean)
+        .map((task) => `- ${task} (${suffix})`);
+    }
+
+    /**
+     * Deterministic local fallback for lesson worksheets ('premier pages' / 'Autre Seance').
+     */
+    function buildFallbackFicheFromSlides(fileName, slides) {
+      const combinedText = (slides || []).map((s) => s.text).join(' ');
+      const pptBase = getUploadedPptBaseTitle(fileName, combinedText);
+      const titreTache = pptBase || 'Étude d’une notion mathématique';
+      const pageMatch = combinedText.match(/(?:page|p\.?)\s*(\d{1,3})/i);
+      const pageN = pageMatch ? parseInt(pageMatch[1], 10) : 34;
+
+      return {
+        isConsolidation: false,
+        pptTitle: pptBase,
+        titre_de_tache: titreTache,
+        objectif: titreTache,
+        numero_lecon: '1',
+        periode: '1',
+        numero_tache: '1',
+        pageN,
+        pageNMinus1: Math.max(1, pageN - 1),
+        pageNMinus2: Math.max(1, pageN - 2),
+        lexique: ['Notion principale : terme et symbole mathématique'],
+        prerequis: ['Identifier les données d’un énoncé', 'Effectuer les opérations de base'],
+        activite_preparatoire: formatPreparatoireLines(
+          ['Observer la situation de départ et formuler des hypothèses'],
+          'Observer la situation de départ'
+        ),
+        regle_ou_propriete: `Appliquer la règle relative à ${titreTache}`,
+        partie_guidee: formatGuidéeLines(
+          ['Résoudre l’exemple guidé pas à pas avec la classe'],
+          titreTache,
+          ''
+        ),
+        binome_extracted: [
+          `Résoudre l’activité en binôme sur ${titreTache}`,
+          'Confronter et valider les réponses à deux'
+        ],
+        autonome_extracted: [
+          `Traiter l’exercice d’application individuellement sur ${titreTache}`,
+          'Vérifier les étapes et la rédaction'
+        ],
+        devoirs: `Préparer les exercices d’entraînement sur la page ${pageN}`
+      };
+    }
+
+    /**
+     * Deterministic local fallback for Consolidation worksheets.
+     */
+    function buildFallbackConsolidationFiche(fileName) {
+      const base = getUploadedPptBaseTitle(fileName, 'Consolidation 1 : Révision');
+      const numMatch = base.match(/consolidation\s*(\d+)/i);
+      const num = numMatch ? numMatch[1] : '1';
+      const titreConsolidation = /^consolidation\s*\d+/i.test(base)
+        ? base
+        : `Consolidation ${num} : ${base}`;
+
+      return {
+        isConsolidation: true,
+        pptTitle: titreConsolidation,
+        titre_de_tache: titreConsolidation,
+        objectif: `Consolider les acquis des élèves sur ${titreConsolidation}`,
+        numero_lecon: num,
+        periode: '1',
+        numero_tache: num,
+        page_consolidation: '25',
+        rappel_lignes: [
+          '- Rappeler les leçons et notions étudiées durant la semaine',
+          '- Mobiliser le vocabulaire et les propriétés clés'
+        ],
+        consolidation_texte: `Consolider les acquis des élèves selon les leçons et exercices de ${titreConsolidation}.`,
+        exercices_lignes: [
+          'Exercice 1 : Calculer et simplifier les expressions demandées',
+          'Exercice 2 : Représenter et résoudre la situation proposée'
+        ]
+      };
+    }
+   /**
+     * Calls Gemini 3 Flash Preview to extract lesson fields from parsed PPTX slides.
+     */
+    async function analyzeSlidesWithGemini(apiKey, fileName, slides) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${encodeURIComponent(
+        apiKey
+      )}`;
+      const slideSummary = (slides || [])
+        .map((s) => `Diapo ${s.slideNumber}: ${s.lines.join(' | ')}`)
+        .join('\n');
+
+      const prompt = [
+        'Tu es un expert en pédagogie et enseignement explicite en mathématiques (collège Maroc).',
+        'Analyse ces diapositives et retourne UNIQUEMENT un objet JSON valide (sans balises markdown).',
+        'Champs attendus : titre_de_tache, objectif, numero_lecon, periode, numero_tache, pageN (entier), lexique (liste), prerequis (liste), activite_preparatoire (liste), regle_ou_propriete, partie_guidee (liste), binome_extracted (liste), autonome_extracted (liste), devoirs.',
+        `Fichier : ${fileName}`,
+        `Diapositives :\n${slideSummary}`
+      ].join('\n');
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.25 }
+        })
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text().catch(() => '');
+        const err = new Error(`Gemini HTTP ${response.status}: ${errBody}`);
+        err.status = response.status;
+        throw err;
+      }
+
+      const data = await response.json();
+      const rawText =
+        data?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
+      const cleaned = rawText
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/```\s*$/i, '')
+        .trim();
+
+      let parsed;
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch (_e) {
+        const match = cleaned.match(/\{[\s\S]*\}/);
+        if (!match) throw new Error('JSON invalide retourné par Gemini.');
+        parsed = JSON.parse(match[0]);
+      }
+
+      const fallback = buildFallbackFicheFromSlides(fileName, slides);
+      const titreTache =
+        stripArabic(String(parsed.titre_de_tache || '').trim()) || fallback.titre_de_tache;
+      const pageN = parseInt(parsed.pageN, 10) || fallback.pageN;
+
+      return {
+        isConsolidation: false,
+        pptTitle: getUploadedPptBaseTitle(fileName, titreTache),
+        titre_de_tache: titreTache,
+        objectif: stripArabic(String(parsed.objectif || '').trim()) || titreTache,
+        numero_lecon: String(parsed.numero_lecon || fallback.numero_lecon),
+        periode: String(parsed.periode || fallback.periode),
+        numero_tache: String(parsed.numero_tache || fallback.numero_tache),
+        pageN,
+        pageNMinus1: Math.max(1, pageN - 1),
+        pageNMinus2: Math.max(1, pageN - 2),
+        lexique:
+          Array.isArray(parsed.lexique) && parsed.lexique.length > 0
+            ? parsed.lexique.map((x) => stripArabic(String(x))).filter(Boolean)
+            : fallback.lexique,
+        prerequis:
+          Array.isArray(parsed.prerequis) && parsed.prerequis.length > 0
+            ? parsed.prerequis.map((x) => stripArabic(String(x))).filter(Boolean)
+            : fallback.prerequis,
+        activite_preparatoire: formatPreparatoireLines(
+          parsed.activite_preparatoire,
+          fallback.activite_preparatoire[0]
+        ),
+        regle_ou_propriete:
+          stripArabic(String(parsed.regle_ou_propriete || '').trim()) || fallback.regle_ou_propriete,
+        partie_guidee: formatGuidéeLines(
+          parsed.partie_guidee,
+          titreTache,
+          parsed.regle_ou_propriete || ''
+        ),
+        binome_extracted:
+          Array.isArray(parsed.binome_extracted) && parsed.binome_extracted.length > 0
+            ? parsed.binome_extracted.map((x) => stripArabic(String(x))).filter(Boolean)
+            : fallback.binome_extracted,
+        autonome_extracted:
+          Array.isArray(parsed.autonome_extracted) && parsed.autonome_extracted.length > 0
+            ? parsed.autonome_extracted.map((x) => stripArabic(String(x))).filter(Boolean)
+            : fallback.autonome_extracted,
+        devoirs:
+          stripArabic(String(parsed.devoirs || '').trim()) ||
+          `Exercices d’application sur la page ${pageN}`
+      };
+    }
+
+    /**
+     * Calls Gemini 3 Flash Preview multimodal vision to extract Consolidation fields from an image.
+     */
+    async function analyzeConsolidationImageWithGemini(apiKey, fileName, dataUrl) {
+      const match = String(dataUrl || '').match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+      if (!match) {
+        return buildFallbackConsolidationFiche(fileName);
+      }
+      const mimeType = match[1];
+      const base64Data = match[2];
+
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${encodeURIComponent(
+        apiKey
+      )}`;
+
+      const prompt = [
+        'Analyse cette image d’une séance de consolidation en mathématiques (collège Maroc).',
+        'Retourne UNIQUEMENT un objet JSON valide (sans balises markdown) avec ces clés :',
+        '{',
+        '  "Titre": "Consolidation <numéro> : <titre du cours>",',
+        '  "Rappel": ["<rappel d’une notion ou leçon de la semaine>", "..."],',
+        '  "Consolidation": "Consolider <objectif de consolidation selon les leçons et exercices>",',
+        '  "Page": "<numéro de page>",',
+        '  "Exercice": ["Exercice <numéro> : <ce qui est demandé dans l’exercice>", "..."]',
+        '}',
+        'Chaque ligne de Exercice doit suivre strictement "Exercice <numéro> : <ce qui est demandé dans l’exercice>".'
+      ].join('\n');
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: prompt },
+                { inline_data: { mime_type: mimeType, data: base64Data } }
+              ]
+            }
+          ],
+          generationConfig: { temperature: 0.2 }
+        })
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text().catch(() => '');
+        const err = new Error(`Gemini Vision HTTP ${response.status}: ${errBody}`);
+        err.status = response.status;
+        throw err;
+      }
+
+      const data = await response.json();
+      const rawText =
+        data?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
+      const cleaned = rawText
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/```\s*$/i, '')
+        .trim();
+
+      let parsed;
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch (_e) {
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('Réponse JSON invalide pour Consolidation.');
+        parsed = JSON.parse(jsonMatch[0]);
+      }
+
+      const fallback = buildFallbackConsolidationFiche(fileName);
+      const rawTitre = stripArabic(String(parsed.Titre || '').trim()) || fallback.titre_de_tache;
+      const numMatch = rawTitre.match(/consolidation\s*(\d+)/i);
+      const num = numMatch ? numMatch[1] : fallback.numero_tache;
+      const titreFinal = /^consolidation\s*\d+/i.test(rawTitre)
+        ? rawTitre
+        : `Consolidation ${num} : ${rawTitre}`;
+
+      const rappelArr =
+        Array.isArray(parsed.Rappel) && parsed.Rappel.length > 0
+          ? parsed.Rappel.map((line) => {
+              const clean = stripArabic(String(line || '').replace(/^[•\-–—*]\s*/, '').trim());
+              return clean ? `- ${clean}` : '';
+            }).filter(Boolean)
+          : fallback.rappel_lignes;
+
+      let consoText = stripArabic(String(parsed.Consolidation || '').trim());
+      if (!consoText) {
+        consoText = fallback.consolidation_texte;
+      } else if (!/^consolider\b/i.test(consoText)) {
+        consoText = `Consolider ${consoText.charAt(0).toLowerCase()}${consoText.slice(1)}`;
+      }
+
+      const pageVal = stripArabic(String(parsed.Page || '').trim()) || fallback.page_consolidation;
+
+      const exercicesArr =
+        Array.isArray(parsed.Exercice) && parsed.Exercice.length > 0
+          ? parsed.Exercice.map((line, idx) => {
+              const clean = stripArabic(String(line || '').replace(/^[•\-–—*]\s*/, '').trim());
+              if (!clean) return '';
+              if (/^exercice\s*\d+\s*:/i.test(clean)) {
+                return clean.replace(/^exercice\s*(\d+)\s*:/i, (_, n) => `Exercice ${n} :`);
+              }
+              return `Exercice ${idx + 1} : ${clean}`;
+            }).filter(Boolean)
+          : fallback.exercices_lignes;
+
+      return {
+        isConsolidation: true,
+        pptTitle: titreFinal,
+        titre_de_tache: titreFinal,
+        objectif: consoText,
+        numero_lecon: num,
+        periode: '1',
+        numero_tache: num,
+        page_consolidation: pageVal,
+        rappel_lignes: rappelArr,
+        consolidation_texte: consoText,
+        exercices_lignes: exercicesArr
+      };
+    }
+
+    /**
+     * Exports a standalone editable .htm document with a built-in print button.
+     */
+    function downloadFicheElementAsHtm(sheetElement, fiche, sectionName) {
+      if (!sheetElement) return;
+      const fileName = buildFicheHtmFileName(fiche, sectionName);
+      const docTitle = escapeHtml(getCanonicalFicheTitle(fiche, sectionName));
+      const sheetHtml = sheetElement.innerHTML;
+
+      const standaloneHtml = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${docTitle}</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: 'Comic Sans MS', 'Segoe UI', cursive, sans-serif;
+      background: #f4f6f9;
+      color: #111625;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .btn-print {
+      background: #1857b8;
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .sheet-wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 8px;
+    }
+    table.pedago-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      border: 1.5px solid #3a608f;
+      background: #ffffff;
+    }
+    table.pedago-table th,
+    table.pedago-table td {
+      border: 1px solid #3a608f;
+      padding: 6px 8px;
+      vertical-align: top;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }
+    .row-header-blue {
+      background-color: #4f81bd;
+      color: #ffffff;
+      font-weight: 700;
+      text-align: center;
+    }
+    .row-header-white {
+      background-color: #ffffff;
+      color: #111625;
+      font-weight: 700;
+    }
+    .col-etapes {
+      background-color: #6b9ac4;
+      color: #ffffff;
+      font-weight: 700;
+      text-align: center;
+    }
+    .fiche-guillemets {
+      font-weight: 800;
+      text-decoration: underline;
+    }
+    .fiche-extracted-underline {
+      text-decoration: underline;
+    }
+    @media print {
+      .toolbar { display: none !important; }
+      body { background: #ffffff !important; padding: 0 !important; }
+      .sheet-wrap { padding: 0 !important; max-width: 100% !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button type="button" class="btn-print" onclick="window.print()">Imprimer</button>
+  </div>
+  <div id="editable-export-sheet" class="sheet-wrap" contenteditable="true">
+    ${sheetHtml}
+  </div>
+</body>
+</html>`;
+
+      const blob = new Blob([standaloneHtml], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1200);
+      showToast(`Fichier enregistré : ${fileName}`, 'success');
+    }
+
+    /**
+     * Renders the 4-column Consolidation worksheet HTML.
+     */
+    function renderConsolidationWorksheetHtml(fiche) {
+      const titreVal = escapeHtml(fiche.titre_de_tache || 'Consolidation 1');
+      const rappelHtml = (fiche.rappel_lignes || [])
+        .map((line) => `<div class="mb-1">${escapeHtml(line)}</div>`)
+        .join('');
+      const consoHtml = `<div class="mb-1">${escapeHtml(fiche.consolidation_texte || '')}</div>`;
+      const pageHtml = `<div class="font-bold text-center">${escapeHtml(fiche.page_consolidation || '')}</div>`;
+      const exercicesHtml = (fiche.exercices_lignes || [])
+        .map((line) => `<div class="mb-1.5">${escapeHtml(line)}</div>`)
+        .join('');
+      const ce = state.ficheEditEnabled ? 'contenteditable="true"' : '';
+
+      return `
+        <div id="fiche-editable-sheet">
+          <div class="mb-2 text-center font-extrabold text-[15px] tracking-wide uppercase text-[#1857b8]" ${ce} data-field="titre_de_tache">
+            ${titreVal}
+          </div>
+          <table class="pedago-table">
+            <colgroup>
+              <col style="width: 18%;" />
+              <col style="width: 34%;" />
+              <col style="width: 14%;" />
+              <col style="width: 34%;" />
+            </colgroup>
+            <thead>
+              <tr class="row-header-blue">
+                <th>Titre</th>
+                <th>Rappel</th>
+                <th>Page</th>
+                <th>Consolidation &amp; Exercice</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-header-white">
+                <td class="col-etapes" ${ce} data-field="titre_de_tache">${titreVal}</td>
+                <td ${ce} data-field="rappel_html">${rappelHtml}</td>
+                <td ${ce} data-field="page_html">${pageHtml}</td>
+                <td ${ce} data-field="consolidation_exercices_html">
+                  <div class="mb-2 pb-1.5 border-b border-slate-300" data-sub="consolidation">${consoHtml}</div>
+                  <div data-sub="exercices">${exercicesHtml}</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    /**
+     * Renders the 5-column Lesson worksheet HTML ('premier pages' / 'Autre Seance').
+     */
+    function renderLessonWorksheetHtml(fiche, sectionTitle) {
+      const isAutreSeance = sectionTitle === 'Autre Seance';
+      const pN = fiche.pageN ?? 34;
+      const pN1 = fiche.pageNMinus1 ?? Math.max(1, pN - 1);
+      const pN2 = fiche.pageNMinus2 ?? Math.max(1, pN - 2);
+      const ce = state.ficheEditEnabled ? 'contenteditable="true"' : '';
+
+      const titreClean = escapeHtml(String(fiche.titre_de_tache || '').replace(/^«|»$/g, '').trim());
+      const lexiqueHtml = (fiche.lexique || [])
+        .map((l) => `<div class="mb-0.5">- ${escapeHtml(l)}</div>`)
+        .join('');
+      const prerequisHtml = (fiche.prerequis || [])
+        .map((p) => `<div class="mb-0.5">- ${escapeHtml(p)}</div>`)
+        .join('');
+      const prepHtml = (fiche.activite_preparatoire || [])
+        .map((a) => `<div class="mb-0.5">${escapeHtml(a)}</div>`)
+        .join('');
+      const guideeHtml = (fiche.partie_guidee || [])
+        .map((g) => `<div class="mb-0.5">${escapeHtml(g)}</div>`)
+        .join('');
+      const binomeHtml = (fiche.binome_extracted || [])
+        .map(
+          (b) =>
+            `<div class="mb-0.5">- <span class="fiche-extracted-underline">${escapeHtml(b)}</span></div>`
+        )
+        .join('');
+      const autonomeHtml = (fiche.autonome_extracted || [])
+        .map(
+          (au) =>
+            `<div class="mb-0.5">- <span class="fiche-extracted-underline">${escapeHtml(au)}</span></div>`
+        )
+        .join('');
+
+      const firstRowRoleProf = isAutreSeance
+        ? `
+          <div class="font-bold mb-1">Exercice de la page ${escapeHtml(pN2)}</div>
+          <div class="mb-1">- Contrôler les cahiers et corriger l’exercice à domicile.</div>
+          <div>- Rappeler les prérequis de la séance précédente.</div>
+        `
+        : `
+          <div class="mb-1">- Contrôler les cahiers des élèves et vérifier la présence.</div>
+          <div>- Activer les prérequis nécessaires à la séance.</div>
+        `;
+
+      return `
+        <div id="fiche-editable-sheet">
+          <div class="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs font-bold">
+            <span>Leçon : ${escapeHtml(fiche.numero_lecon)} | Période : ${escapeHtml(fiche.periode)} | Tâche : ${escapeHtml(fiche.numero_tache)}</span>
+            <span>Pages : ${escapeHtml(pN)} / ${escapeHtml(pN1)} / ${escapeHtml(pN2)}</span>
+          </div>
+          <div class="mb-2 text-center font-extrabold text-[14px]">
+            Titre de la leçon : <span class="fiche-guillemets" ${ce} data-field="titre_de_tache">« ${titreClean} »</span>
+          </div>
+          <table class="pedago-table">
+            <colgroup>
+              <col style="width: 15%;" />
+              <col style="width: 14.4%;" />
+              <col style="width: 34%;" />
+              <col style="width: 22.6%;" />
+              <col style="width: 14%;" />
+            </colgroup>
+            <thead>
+              <tr class="row-header-blue">
+                <th>Étapes / Durée</th>
+                <th>Activités</th>
+                <th>Rôle du professeur</th>
+                <th>Activités des élèves</th>
+                <th>Supports</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-header-white">
+                <td class="col-etapes">Ouverture<br/><span class="fiche-accent text-sm">10 min</span></td>
+                <td class="font-semibold">Mise en train &amp; Lexique</td>
+                <td ${ce} data-field="first_row_prof">${firstRowRoleProf}</td>
+                <td ${ce} data-field="lexique_prerequis">
+                  <div class="font-bold mb-0.5">Lexique :</div>
+                  ${lexiqueHtml}
+                  <div class="font-bold mt-1 mb-0.5">Prérequis :</div>
+                  ${prerequisHtml}
+                </td>
+                <td>Tableau, Cahier, PPT</td>
+              </tr>
+              <tr class="row-header-blue">
+                <td colspan="5">Phase de recherche et construction</td>
+              </tr>
+              <tr class="row-header-white">
+                <td class="col-etapes">Activité préparatoire<br/><span class="fiche-accent text-sm">15 min</span></td>
+                <td class="font-semibold">Découverte</td>
+                <td ${ce} data-field="activite_preparatoire">${prepHtml}</td>
+                <td>Chercher individuellement puis partager les idées.</td>
+                <td>Livret, Ardoise</td>
+              </tr>
+              <tr class="row-header-white">
+                <td class="col-etapes">Institutionnalisation<br/><span class="fiche-accent text-sm">10 min</span></td>
+                <td class="font-semibold">Trace écrite</td>
+                <td ${ce} data-field="regle_ou_propriete">
+                  <div class="font-bold mb-0.5">Propriété / Règle :</div>
+                  <div>${escapeHtml(fiche.regle_ou_propriete || '')}</div>
+                </td>
+                <td>Noter la trace écrite avec soin dans le cahier.</td>
+                <td>Tableau, Cahier</td>
+              </tr>
+              <tr class="row-header-blue">
+                <td colspan="5">Phase d’entraînement et d’application</td>
+              </tr>
+              <tr class="row-header-white">
+                <td class="col-etapes">Partie guidée<br/><span class="fiche-accent text-sm">10 min</span></td>
+                <td class="font-semibold">Guidage collectif</td>
+                <td ${ce} data-field="partie_guidee">${guideeHtml}</td>
+                <td>Répondre aux questions et valider la démarche.</td>
+                <td>Tableau, Livret</td>
+              </tr>
+              <tr class="row-header-white">
+                <td class="col-etapes">Travail en binôme<br/><span class="fiche-accent text-sm">10 min</span></td>
+                <td class="font-semibold">Binôme</td>
+                <td>Accompagner les binômes et réguler les erreurs.</td>
+                <td ${ce} data-field="binome_extracted">${binomeHtml}</td>
+                <td>Livret, Cahier</td>
+              </tr>
+              <tr class="row-header-white">
+                <td class="col-etapes">Travail autonome<br/><span class="fiche-accent text-sm">10 min</span></td>
+                <td class="font-semibold">Individuel</td>
+                <td>Observer l’autonomie et apporter une aide ciblée.</td>
+                <td ${ce} data-field="autonome_extracted">${autonomeHtml}</td>
+                <td>Livret, Cahier</td>
+              </tr>
+              <tr class="row-header-white">
+                <td class="col-etapes">Devoirs<br/><span class="fiche-accent text-sm">Maison</span></td>
+                <td class="font-semibold">Exercice à la maison</td>
+                <td ${ce} data-field="devoirs">${escapeHtml(fiche.devoirs || '')}</td>
+                <td>Préparer la correction pour la séance suivante.</td>
+                <td>Livret de l’élève</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    /**
+     * Synchronizes inline edits from DOM into state.generatedFiche.
+     */
+    function syncEditedFicheFromDom() {
+      if (!state.generatedFiche) return;
+      const sheet = document.getElementById('fiche-editable-sheet');
+      if (!sheet) return;
+
+      const titleNode = sheet.querySelector('[data-field="titre_de_tache"]');
+      if (titleNode) {
+        const cleaned = String(titleNode.textContent || '').replace(/^«|»$/g, '').trim();
+        if (cleaned) state.generatedFiche.titre_de_tache = cleaned;
+      }
+
+      if (state.generatedFiche.isConsolidation || state.selectedSection === 'Consolidation') {
+        const rappelNode = sheet.querySelector('[data-field="rappel_html"]');
+        if (rappelNode) {
+          const lines = Array.from(rappelNode.querySelectorAll('div'))
+            .map((d) => d.textContent.trim())
+            .filter(Boolean);
+          if (lines.length > 0) state.generatedFiche.rappel_lignes = lines;
+        }
+        const pageNode = sheet.querySelector('[data-field="page_html"]');
+        if (pageNode) {
+          state.generatedFiche.page_consolidation = pageNode.textContent.trim();
+        }
+        const consoNode = sheet.querySelector('[data-sub="consolidation"]');
+        if (consoNode) {
+          state.generatedFiche.consolidation_texte = consoNode.textContent.trim();
+        }
+        const exNode = sheet.querySelector('[data-sub="exercices"]');
+        if (exNode) {
+          const exLines = Array.from(exNode.querySelectorAll('div'))
+            .map((d) => d.textContent.trim())
+            .filter(Boolean);
+          if (exLines.length > 0) state.generatedFiche.exercices_lignes = exLines;
+        }
+      } else {
+        const prepNode = sheet.querySelector('[data-field="activite_preparatoire"]');
+        if (prepNode) {
+          const lines = Array.from(prepNode.querySelectorAll('div'))
+            .map((d) => d.textContent.trim())
+            .filter(Boolean);
+          if (lines.length > 0) state.generatedFiche.activite_preparatoire = lines;
+        }
+        const guideeNode = sheet.querySelector('[data-field="partie_guidee"]');
+        if (guideeNode) {
+          const lines = Array.from(guideeNode.querySelectorAll('div'))
+            .map((d) => d.textContent.trim())
+            .filter(Boolean);
+          if (lines.length > 0) state.generatedFiche.partie_guidee = lines;
+        }
+        const devoirsNode = sheet.querySelector('[data-field="devoirs"]');
+        if (devoirsNode) {
+          state.generatedFiche.devoirs = devoirsNode.textContent.trim();
+        }
+      }
+    }
+
+    /**
+     * Renders saved fiches modal: 'Ouvrir' for regular users; 'Ouvrir', '.htm', 'Supprimer' for admins.
+     */
+    function renderSavedFichesModalHtml() {
+      if (!state.showReadyFichesModal) return '';
+      const items = Array.isArray(state.savedFiches) ? state.savedFiches : [];
+
+      return `
+        <div class="no-print fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-[2px] flex items-center justify-center p-4">
+          <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 overflow-hidden max-h-[85vh] flex flex-col">
+            <div class="bg-[#1857b8] text-white px-5 py-4 flex items-center justify-between">
+              <div>
+                <h2 class="text-base font-extrabold">Les fiches techniques</h2>
+                <p class="text-[11px] text-blue-100">Fiches enregistrées (${items.length})</p>
+              </div>
+              <button
+                type="button"
+                id="btn-close-ready-fiches"
+                aria-label="Fermer"
+                class="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 space-y-3">
+              ${
+                items.length === 0
+                  ? `
+                <div class="text-center py-10 text-sm text-[#5a6272]">
+                  Aucune fiche enregistrée pour le moment.
+                </div>
+              `
+                  : items
+                      .map(
+                        (item) => `
+                  <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col gap-2">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="font-bold text-sm text-[#111625] break-words">
+                        ${escapeHtml(item.title || item.fiche?.titre_de_tache || 'Sans titre')}
+                      </div>
+                      <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#1857b8]/10 text-[#1857b8] shrink-0">
+                        ${escapeHtml(item.section || 'Cours')}
+                      </span>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        data-open-fiche-id="${escapeHtml(item.id)}"
+                        class="px-3.5 py-1.5 rounded-xl bg-[#1857b8] hover:bg-[#134696] text-white text-xs font-bold cursor-pointer"
+                      >
+                        Ouvrir
+                      </button>
+                      ${
+                        state.isAdmin
+                          ? `
+                        <button
+                          type="button"
+                          data-htm-fiche-id="${escapeHtml(item.id)}"
+                          class="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-bold cursor-pointer"
+                        >
+                          .htm
+                        </button>
+                        <button
+                          type="button"
+                          data-del-fiche-id="${escapeHtml(item.id)}"
+                          class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold cursor-pointer"
+                        >
+                          Supprimer
+                        </button>
+                      `
+                          : ''
+                      }
+                    </div>
+                  </div>
+                `
+                      )
+                      .join('')
+              }
+            </div>
+          </div>
+        </div>
+      `;
+    }
+/**
+     * Attaches event handlers for the saved fiches modal.
+     */
+    function attachSavedFichesModalListeners() {
+      const closeModalBtn = document.getElementById('btn-close-ready-fiches');
+      if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+          state.showReadyFichesModal = false;
+          window.renderApp();
+        });
+      }
+
+      document.querySelectorAll('[data-open-fiche-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-open-fiche-id');
+          const found = state.savedFiches.find((f) => String(f.id) === String(id));
+          if (!found || !found.fiche) return;
+          state.showReadyFichesModal = false;
+          state.openedFromReadyFiches = true;
+          state.selectedSection =
+            found.section || (found.fiche.isConsolidation ? 'Consolidation' : 'premier pages');
+          state.generatedFiche = JSON.parse(JSON.stringify(found.fiche));
+          state.originalFicheBackup = JSON.parse(JSON.stringify(found.fiche));
+          state.analysisError = '';
+          navigateTo('preview');
+        });
+      });
+
+      document.querySelectorAll('[data-htm-fiche-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (!state.isAdmin) return;
+          const id = btn.getAttribute('data-htm-fiche-id');
+          const found = state.savedFiches.find((f) => String(f.id) === String(id));
+          if (!found || !found.fiche) return;
+          state.showReadyFichesModal = false;
+          state.openedFromReadyFiches = false;
+          state.selectedSection =
+            found.section || (found.fiche.isConsolidation ? 'Consolidation' : 'premier pages');
+          state.generatedFiche = JSON.parse(JSON.stringify(found.fiche));
+          state.originalFicheBackup = JSON.parse(JSON.stringify(found.fiche));
+          state.analysisError = '';
+          state.screen = 'preview';
+          window.renderApp();
+          const sheetEl = document.getElementById('fiche-editable-sheet');
+          if (sheetEl) {
+            downloadFicheElementAsHtm(sheetEl, found.fiche, state.selectedSection);
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-del-fiche-id]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          if (!state.isAdmin) return;
+          const id = btn.getAttribute('data-del-fiche-id');
+          await deleteSavedFicheRecord(id);
+          window.renderApp();
+          showToast('Fiche supprimée.', 'info');
+        });
+      });
+    }
+
+    /**
+     * View 1: 'login'
+     */
+    function renderLoginScreen() {
+      return `
+        <section class="screen-enter flex-1 flex flex-col justify-center max-w-md w-full mx-auto py-4">
+          <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#1857b8]/10 text-[#1857b8] font-extrabold text-2xl mb-3">
+              π
+            </div>
+            <h1 class="text-2xl font-extrabold text-[#111625]">Espace π</h1>
+            <p class="text-xs text-[#5a6272] mt-1">Fiche Pédagogique d’une séance</p>
+          </div>
+
+          <form id="login-form" class="space-y-4">
+            <div>
+              <label for="login-username" class="block text-xs font-bold text-[#111625] mb-1.5">
+                Nom d’utilisateur
+              </label>
+              <input
+                id="login-username"
+                type="text"
+                required
+                placeholder="ex: prof ou admin"
+                class="w-full px-4 py-3 rounded-2xl border border-[#c7cdd8] focus:border-[#1857b8] focus:outline-none text-sm"
+              />
+            </div>
+
+            <div>
+              <label for="login-password" class="block text-xs font-bold text-[#111625] mb-1.5">
+                Mot de passe
+              </label>
+              <input
+                id="login-password"
+                type="password"
+                required
+                placeholder="••••••••"
+                class="w-full px-4 py-3 rounded-2xl border border-[#c7cdd8] focus:border-[#1857b8] focus:outline-none text-sm"
+              />
+            </div>
+
+            ${
+              state.loginError
+                ? `<div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">${escapeHtml(
+                    state.loginError
+                  )}</div>`
+                : ''
+            }
+
+            <button
+              type="submit"
+              class="w-full py-3.5 rounded-2xl bg-[#1857b8] hover:bg-[#134696] text-white font-extrabold text-sm shadow-sm transition-colors cursor-pointer"
+            >
+              Se connecter
+            </button>
+          </form>
+
+          <div class="mt-6 pt-4 border-t border-slate-200 flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              id="btn-quick-user"
+              class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#111625] text-xs font-bold cursor-pointer"
+            >
+              Connexion Professeur (prof)
+            </button>
+            <button
+              type="button"
+              id="btn-quick-admin"
+              class="px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#1857b8] text-xs font-bold cursor-pointer"
+            >
+              Connexion Admin (admin)
+            </button>
+          </div>
+        </section>
+      `;
+    }
+
+    /**
+     * Attaches login view event listeners.
+     */
+    function attachLoginListeners() {
+      const form = document.getElementById('login-form');
+      const quickUser = document.getElementById('btn-quick-user');
+      const quickAdmin = document.getElementById('btn-quick-admin');
+
+      const performLogin = (username, password) => {
+        const cleanUser = String(username || '').trim();
+        const found = state.users.find(
+          (u) =>
+            String(u.username).toLowerCase() === cleanUser.toLowerCase() &&
+            String(u.password) === String(password)
+        );
+        if (!found) {
+          state.loginError = 'Identifiants invalides.';
+          window.renderApp();
+          return;
+        }
+        if (found.frozen) {
+          state.loginError = 'Compte suspendu.';
+          window.renderApp();
+          return;
+        }
+        state.loginError = '';
+        state.currentUser = found;
+        state.isAdmin = found.role === 'admin';
+        state.showReadyFichesModal = false;
+        state.openedFromReadyFiches = false;
+        writeSessionToStorage({ username: found.username, role: found.role });
+        navigateTo(state.isAdmin ? 'admin' : 'accueil');
+      };
+
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const u = document.getElementById('login-username')?.value || '';
+          const p = document.getElementById('login-password')?.value || '';
+          performLogin(u, p);
+        });
+      }
+
+      if (quickUser) {
+        quickUser.addEventListener('click', () => performLogin('prof', '123'));
+      }
+
+      if (quickAdmin) {
+        quickAdmin.addEventListener('click', () => performLogin('admin', '123'));
+      }
+    }
+
+    /**
+     * View 2: 'accueil'
+     */
+    function renderAccueilScreen() {
+      const userLabel = state.currentUser?.username || 'Invité';
+
+      return `
+        <section class="screen-enter flex-1 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-200/80 gap-2">
+              <div>
+                <h1 class="text-xl sm:text-2xl font-extrabold text-[#111625]">Espace π</h1>
+                <p class="text-xs text-[#5a6272]">Utilisateur : <span class="font-bold">${escapeHtml(userLabel)}</span></p>
+              </div>
+              <div class="flex items-center gap-2">
+                ${
+                  state.isAdmin
+                    ? `<button
+                        type="button"
+                        id="btn-go-admin"
+                        class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#111625] text-xs font-bold cursor-pointer"
+                      >
+                        Pages Admin
+                      </button>`
+                    : ''
+                }
+                <button
+                  type="button"
+                  id="btn-logout-accueil"
+                  class="px-3.5 py-2 rounded-xl border border-[#c7cdd8] hover:border-rose-400 hover:text-rose-700 text-xs font-bold cursor-pointer"
+                >
+                  Déconnexion
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto my-6">
+              <button
+                type="button"
+                id="btn-open-generator"
+                class="p-6 rounded-3xl border-2 border-[#1857b8] bg-[#1857b8] hover:bg-[#134696] text-white text-left shadow-sm transition-all cursor-pointer flex flex-col justify-between gap-3"
+              >
+                <span class="text-xs uppercase tracking-wider font-bold text-blue-100">Création</span>
+                <div>
+                  <div class="text-lg font-extrabold">Générateur de fiche technique</div>
+                  <p class="text-xs text-blue-100 mt-1">Premier pages, Autre Seance (.pptx) ou Consolidation (image)</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                id="btn-open-ready-fiches"
+                class="p-6 rounded-3xl border-2 border-[#c7cdd8] hover:border-[#1857b8] bg-white hover:bg-blue-50/40 text-[#111625] text-left shadow-sm transition-all cursor-pointer flex flex-col justify-between gap-3"
+              >
+                <span class="text-xs uppercase tracking-wider font-bold text-[#1857b8]">Bibliothèque</span>
+                <div>
+                  <div class="text-lg font-extrabold">Les fiches techniques</div>
+                  <p class="text-xs text-[#5a6272] mt-1">Fiches enregistrées (${state.savedFiches.length})</p>
+                </div>
+              </button>
+            </div>
+
+            ${
+              state.showSectionChooser
+                ? `
+              <div class="max-w-2xl mx-auto p-4 rounded-2xl bg-slate-50 border border-slate-200 mt-4">
+                <div class="text-xs font-extrabold text-[#111625] mb-3">Choisir le type de séance :</div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <button
+                    type="button"
+                    data-section="premier pages"
+                    class="hub-section-btn px-4 py-3 rounded-xl bg-white hover:bg-[#1857b8] hover:text-white border border-[#c7cdd8] text-xs font-extrabold transition-colors cursor-pointer"
+                  >
+                    premier pages
+                  </button>
+                  <button
+                    type="button"
+                    data-section="Autre Seance"
+                    class="hub-section-btn px-4 py-3 rounded-xl bg-white hover:bg-[#1857b8] hover:text-white border border-[#c7cdd8] text-xs font-extrabold transition-colors cursor-pointer"
+                  >
+                    Autre Seance
+                  </button>
+                  <button
+                    type="button"
+                    data-section="Consolidation"
+                    class="hub-section-btn px-4 py-3 rounded-xl bg-white hover:bg-[#1857b8] hover:text-white border border-[#c7cdd8] text-xs font-extrabold transition-colors cursor-pointer"
+                  >
+                    Consolidation
+                  </button>
+                </div>
+              </div>
+            `
+                : ''
+            }
+          </div>
+
+          ${renderSavedFichesModalHtml()}
+        </section>
+      `;
+    }
+
+    /**
+     * Attaches Accueil view listeners.
+     */
+    function attachAccueilListeners() {
+      const openGenBtn = document.getElementById('btn-open-generator');
+      if (openGenBtn) {
+        openGenBtn.addEventListener('click', () => {
+          state.showSectionChooser = !state.showSectionChooser;
+          window.renderApp();
+        });
+      }
+
+      document.querySelectorAll('.hub-section-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const sectionName = btn.getAttribute('data-section') || 'premier pages';
+          state.selectedSection = sectionName;
+          state.showSectionChooser = false;
+          state.openedFromReadyFiches = false;
+          state.uploadedFile = null;
+          state.uploadedImageDataUrl = '';
+          state.parsedSlides = [];
+          state.generatedFiche = null;
+          state.originalFicheBackup = null;
+          state.analysisError = '';
+          navigateTo('upload');
+        });
+      });
+
+      const readyBtn = document.getElementById('btn-open-ready-fiches');
+      if (readyBtn) {
+        readyBtn.addEventListener('click', () => {
+          state.showReadyFichesModal = true;
+          window.renderApp();
+          void hydrateFromFirestore();
+        });
+      }
+
+      const goAdminBtn = document.getElementById('btn-go-admin');
+      if (goAdminBtn) {
+        goAdminBtn.addEventListener('click', () => navigateTo('admin'));
+      }
+
+      const logoutBtn = document.getElementById('btn-logout-accueil');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+          state.currentUser = null;
+          state.isAdmin = false;
+          state.showSectionChooser = false;
+          state.showReadyFichesModal = false;
+          state.openedFromReadyFiches = false;
+          writeSessionToStorage(null);
+          navigateTo('login');
+        });
+      }
+
+      attachSavedFichesModalListeners();
+    }
+
+    /**
+     * View 3: 'upload'
+     */
+    function renderUploadScreen() {
+      const section = state.selectedSection || 'premier pages';
+      const isConsolidation = section === 'Consolidation';
+      const acceptAttr = isConsolidation
+        ? 'image/*'
+        : '.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation';
+
+      return `
+        <section class="screen-enter flex-1 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-200/80 gap-2">
+              <button
+                type="button"
+                id="btn-back-to-accueil"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border-[1.8px] border-[#c7cdd8] hover:border-[#1857b8] hover:text-[#1857b8] text-xs font-extrabold cursor-pointer"
+              >
+                <span>← Retour</span>
+              </button>
+              <span class="px-3 py-1 rounded-full text-xs font-bold bg-[#1857b8]/10 text-[#1857b8]">
+                ${escapeHtml(section)}
+              </span>
+            </div>
+
+            <div class="max-w-xl mx-auto">
+              <h1 class="text-xl sm:text-2xl font-extrabold text-[#111625] text-center">
+                ${isConsolidation ? 'Télécharger l’image de Consolidation' : 'Télécharger le fichier PPTX'}
+              </h1>
+              <p class="text-xs text-[#5a6272] text-center mt-1 mb-5">
+                ${
+                  isConsolidation
+                    ? 'Choisissez une image pour extraire Titre, Rappel, Consolidation, Page et Exercice.'
+                    : 'Choisissez un fichier .pptx pour extraire les diapositives et générer la fiche.'
+                }
+              </p>
+
+              <label
+                for="fiche-file-input"
+                class="flex flex-col items-center justify-center p-7 rounded-3xl border-2 border-dashed border-[#c7cdd8] hover:border-[#1857b8] bg-slate-50/70 cursor-pointer transition-colors text-center"
+              >
+                <span class="text-sm font-extrabold text-[#111625]">
+                  ${isConsolidation ? 'Sélectionner une image' : 'Sélectionner un fichier .pptx'}
+                </span>
+                <span class="text-xs text-[#5a6272] mt-1">
+                  ${
+                    state.uploadedFile
+                      ? `Fichier : ${escapeHtml(state.uploadedFile.name)}`
+                      : isConsolidation
+                      ? 'PNG, JPG, WEBP'
+                      : '.pptx'
+                  }
+                </span>
+                <input
+                  id="fiche-file-input"
+                  type="file"
+                  accept="${acceptAttr}"
+                  class="hidden"
+                />
+              </label>
+
+              ${
+                isConsolidation && state.uploadedImageDataUrl
+                  ? `
+                <div class="mt-4 flex justify-center">
+                  <img
+                    src="${escapeHtml(state.uploadedImageDataUrl)}"
+                    alt="Aperçu de la consolidation"
+                    class="max-h-52 rounded-2xl border border-slate-200 object-contain"
+                  />
+                </div>
+              `
+                  : ''
+              }
+
+              ${
+                !isConsolidation && state.parsedSlides.length > 0
+                  ? `<div class="mt-3 text-center text-xs font-bold text-emerald-700">
+                      ${state.parsedSlides.length} diapositive(s) extraite(s).
+                    </div>`
+                  : ''
+              }
+
+              ${
+                state.analysisError
+                  ? `<div class="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold">
+                      ${escapeHtml(state.analysisError)}
+                    </div>`
+                  : ''
+              }
+
+              <button
+                type="button"
+                id="btn-create-fiche"
+                ${state.isAnalyzing ? 'disabled' : ''}
+                class="w-full mt-6 py-3.5 rounded-2xl bg-[#1857b8] hover:bg-[#134696] disabled:opacity-60 text-white font-extrabold text-sm shadow-sm transition-colors cursor-pointer"
+              >
+                ${state.isAnalyzing ? 'Analyse en cours...' : 'Cree fiche technique'}
+              </button>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    /**
+     * Attaches Upload view file selection and analysis listeners.
+     */
+    function attachUploadListeners() {
+      const backBtn = document.getElementById('btn-back-to-accueil');
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          state.showSectionChooser = true;
+          navigateTo('accueil');
+        });
+      }
+
+      const fileInput = document.getElementById('fiche-file-input');
+      if (fileInput) {
+        fileInput.addEventListener('change', async (e) => {
+          const file = e.target.files?.[0] || null;
+          state.uploadedFile = file;
+          state.uploadedImageDataUrl = '';
+          state.parsedSlides = [];
+          state.generatedFiche = null;
+          state.originalFicheBackup = null;
+          state.analysisError = '';
+
+          if (!file) {
+            window.renderApp();
+            return;
+          }
+
+          if (state.selectedSection === 'Consolidation') {
+            try {
+              state.uploadedImageDataUrl = await readFileAsDataUrl(file);
+            } catch (err) {
+              state.analysisError = err.message || 'Erreur de lecture de l’image.';
+            }
+            window.renderApp();
+          } else {
+            try {
+              state.parsedSlides = await parsePptxFile(file);
+            } catch (err) {
+              state.analysisError = `Erreur de lecture PPTX : ${err.message || 'Fichier invalide'}`;
+            }
+            window.renderApp();
+          }
+        });
+      }
+
+      const createBtn = document.getElementById('btn-create-fiche');
+      if (createBtn) {
+        createBtn.addEventListener('click', async () => {
+          if (!state.uploadedFile) {
+            showToast('Veuillez sélectionner un fichier avant de continuer.', 'warning');
+            return;
+          }
+
+          state.isAnalyzing = true;
+          state.analysisError = '';
+          window.renderApp();
+
+          const isConsolidation = state.selectedSection === 'Consolidation';
+          const activeKey = readApiKeyFromStorage() || state.apiKey;
+
+          try {
+            if (isConsolidation) {
+              const dataUrl =
+                state.uploadedImageDataUrl || (await readFileAsDataUrl(state.uploadedFile));
+              if (activeKey) {
+                state.generatedFiche = await analyzeConsolidationImageWithGemini(
+                  activeKey,
+                  state.uploadedFile.name,
+                  dataUrl
+                );
+              } else {
+                state.generatedFiche = buildFallbackConsolidationFiche(state.uploadedFile.name);
+              }
+            } else {
+              let slides = state.parsedSlides;
+              if (!slides || slides.length === 0) {
+                slides = await parsePptxFile(state.uploadedFile);
+                state.parsedSlides = slides;
+              }
+              if (activeKey) {
+                state.generatedFiche = await analyzeSlidesWithGemini(
+                  activeKey,
+                  state.uploadedFile.name,
+                  slides
+                );
+              } else {
+                state.generatedFiche = buildFallbackFicheFromSlides(
+                  state.uploadedFile.name,
+                  slides
+                );
+              }
+              state.generatedFiche.pptTitle = getUploadedPptBaseTitle(
+                state.uploadedFile.name,
+                state.generatedFiche.titre_de_tache
+              );
+            }
+
+            state.openedFromReadyFiches = false;
+            state.originalFicheBackup = JSON.parse(JSON.stringify(state.generatedFiche));
+            state.isAnalyzing = false;
+            navigateTo('preview');
+          } catch (err) {
+            console.error('Analysis fallback triggered:', err);
+            state.analysisError = `Génération locale appliquée (${err.message || 'Quota/réseau'}).`;
+            if (isConsolidation) {
+              state.generatedFiche = buildFallbackConsolidationFiche(state.uploadedFile.name);
+            } else {
+              state.generatedFiche = buildFallbackFicheFromSlides(
+                state.uploadedFile.name,
+                state.parsedSlides || []
+              );
+              state.generatedFiche.pptTitle = getUploadedPptBaseTitle(
+                state.uploadedFile.name,
+                state.generatedFiche.titre_de_tache
+              );
+            }
+            state.openedFromReadyFiches = false;
+            state.originalFicheBackup = JSON.parse(JSON.stringify(state.generatedFiche));
+            state.isAnalyzing = false;
+            navigateTo('preview');
+          }
+        });
+      }
+    }
+
+    /**
+     * View 4: 'preview'
+     */
+    function renderPreviewScreen() {
+      const fiche = state.generatedFiche;
+      if (!fiche) {
+        return `
+          <section class="screen-enter flex-1 flex flex-col items-center justify-center text-center p-6">
+            <p class="text-sm font-bold text-[#5a6272] mb-4">Aucune fiche générée.</p>
+            <button
+              type="button"
+              id="btn-empty-preview-back"
+              class="px-4 py-2.5 rounded-xl bg-[#1857b8] text-white text-xs font-bold cursor-pointer"
+            >
+              Retour
+            </button>
+          </section>
+        `;
+      }
+
+      const sectionTitle =
+        state.selectedSection || (fiche.isConsolidation ? 'Consolidation' : 'premier pages');
+      const isSavedFicheView = Boolean(state.openedFromReadyFiches);
+
+      const worksheetInner =
+        fiche.isConsolidation || sectionTitle === 'Consolidation'
+          ? renderConsolidationWorksheetHtml(fiche)
+          : renderLessonWorksheetHtml(fiche, sectionTitle);
+
+      return `
+        <section class="screen-enter flex-1 flex flex-col justify-between">
+          <div>
+            <div class="no-print flex items-center justify-between pb-4 mb-4 border-b border-slate-200/80 gap-2">
+              <button
+                type="button"
+                id="btn-back-from-preview"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border-[1.8px] border-[#c7cdd8] hover:border-[#1857b8] hover:text-[#1857b8] text-[#111625] text-xs font-extrabold transition-colors cursor-pointer shrink-0"
+              >
+                <span>← Retour</span>
+              </button>
+
+              <span class="px-3 py-1 rounded-full text-xs font-bold bg-[#1857b8]/10 text-[#1857b8] truncate">
+                ${escapeHtml(sectionTitle)}
+              </span>
+            </div>
+
+            <div class="no-print flex flex-wrap items-center justify-center gap-2 bg-slate-100 border border-slate-200 rounded-2xl p-2.5 mb-4">
+              ${
+                isSavedFicheView
+                  ? `
+                <button
+                  type="button"
+                  id="btn-download-pdf-fiche"
+                  class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1857b8] hover:bg-[#134696] text-white text-xs font-extrabold shadow-sm transition-colors cursor-pointer"
+                >
+                  <span>Télécharger PDF</span>
+                </button>
+              `
+                  : `
+                <button
+                  type="button"
+                  id="btn-toggle-edit-fiche"
+                  class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border ${
+                    state.ficheEditEnabled
+                      ? 'bg-amber-50 border-amber-300 text-amber-900'
+                      : 'bg-white border-slate-300 text-[#111625]'
+                  } text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <span>${state.ficheEditEnabled ? 'Édition active' : 'Activer édition'}</span>
+                </button>
+                <button
+                  type="button"
+                  id="btn-reset-edit-fiche"
+                  class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-[#111625] text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <span>Réinitialiser</span>
+                </button>
+                <button
+                  type="button"
+                  id="btn-save-edit-fiche"
+                  class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                >
+                  <span>Enregistrer</span>
+                </button>
+                <button
+                  type="button"
+                  id="btn-print-fiche"
+                  class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#1857b8] hover:bg-[#134696] text-white text-xs font-bold shadow-sm transition-colors cursor-pointer"
+                >
+                  <span>Imprimer</span>
+                </button>
+              `
+              }
+            </div>
+
+            ${worksheetInner}
+          </div>
+        </section>
+      `;
+    }
+
+    /**
+     * Attaches Preview screen button listeners.
+     */
+    function attachPreviewListeners() {
+      const emptyBack = document.getElementById('btn-empty-preview-back');
+      if (emptyBack) {
+        emptyBack.addEventListener('click', () => navigateTo('upload'));
+      }
+
+      const backBtn = document.getElementById('btn-back-from-preview');
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          if (!state.openedFromReadyFiches) {
+            syncEditedFicheFromDom();
+          }
+          if (state.openedFromReadyFiches) {
+            state.openedFromReadyFiches = false;
+            state.showReadyFichesModal = true;
+            navigateTo(state.isAdmin ? 'admin' : 'accueil');
+            return;
+          }
+          navigateTo('upload');
+        });
+      }
+
+      const pdfBtn = document.getElementById('btn-download-pdf-fiche');
+      if (pdfBtn) {
+        pdfBtn.addEventListener('click', () => {
+          window.print();
+        });
+      }
+
+      const printBtn = document.getElementById('btn-print-fiche');
+      if (printBtn) {
+        printBtn.addEventListener('click', () => {
+          syncEditedFicheFromDom();
+          window.print();
+        });
+      }
+
+      const toggleEditBtn = document.getElementById('btn-toggle-edit-fiche');
+      if (toggleEditBtn) {
+        toggleEditBtn.addEventListener('click', () => {
+          if (state.ficheEditEnabled) {
+            syncEditedFicheFromDom();
+          }
+          state.ficheEditEnabled = !state.ficheEditEnabled;
+          window.renderApp();
+        });
+      }
+
+      const resetEditBtn = document.getElementById('btn-reset-edit-fiche');
+      if (resetEditBtn) {
+        resetEditBtn.addEventListener('click', () => {
+          if (state.originalFicheBackup) {
+            state.generatedFiche = JSON.parse(JSON.stringify(state.originalFicheBackup));
+            state.ficheEditEnabled = false;
+            window.renderApp();
+            showToast('Fiche réinitialisée.', 'info');
+          }
+        });
+      }
+
+      const saveEditBtn = document.getElementById('btn-save-edit-fiche');
+      if (saveEditBtn) {
+        saveEditBtn.addEventListener('click', async () => {
+          syncEditedFicheFromDom();
+          const sectionName =
+            state.selectedSection ||
+            (state.generatedFiche?.isConsolidation ? 'Consolidation' : 'premier pages');
+          const canonicalTitle = getCanonicalFicheTitle(
+            state.generatedFiche,
+            sectionName,
+            state.uploadedFile?.name || ''
+          );
+          const titleKey = normalizeFicheTitleKey(canonicalTitle);
+
+          const alreadyExists = state.savedFiches.some(
+            (item) => normalizeFicheTitleKey(item.title) === titleKey
+          );
+
+          if (alreadyExists) {
+            showToast('deja exist', 'warning');
+            return;
+          }
+
+          const record = {
+            id: `fiche_${Date.now()}`,
+            title: canonicalTitle || sectionName,
+            section: sectionName,
+            fiche: JSON.parse(JSON.stringify(state.generatedFiche)),
+            updatedAt: new Date().toISOString()
+          };
+
+          await persistSavedFicheRecord(record);
+          const sheetEl = document.getElementById('fiche-editable-sheet');
+          if (sheetEl) {
+            downloadFicheElementAsHtm(sheetEl, state.generatedFiche, sectionName);
+          }
+        });
+      }
+    }
+  /**
+     * View 5: 'admin'
+     */
+    function renderAdminScreen() {
+      const usersList = state.adminFilterActiveOnly
+        ? state.users.filter((u) => !u.frozen)
+        : state.users;
+
+      return `
+        <section class="screen-enter flex-1 flex flex-col">
+          <div class="no-print flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-slate-200/80">
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                id="admin-logout-btn"
+                class="px-3.5 py-2 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-extrabold cursor-pointer"
+              >
+                Déconnexion
+              </button>
+              <button
+                type="button"
+                id="admin-go-accueil-btn"
+                class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#111625] text-xs font-extrabold cursor-pointer"
+              >
+                Accueil
+              </button>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                id="admin-saved-fiches-btn"
+                class="px-4 py-2 rounded-xl bg-[#1857b8] hover:bg-[#134696] text-white text-xs font-extrabold shadow-xs cursor-pointer"
+              >
+                Fiches enregistrées (${state.savedFiches.length})
+              </button>
+              <button
+                type="button"
+                id="admin-key-btn"
+                class="px-3.5 py-2 rounded-xl border border-[#1857b8] text-[#1857b8] hover:bg-blue-50 text-xs font-extrabold cursor-pointer"
+              >
+                API Key
+              </button>
+              <button
+                type="button"
+                id="admin-filter-btn"
+                class="px-3.5 py-2 rounded-xl border border-[#c7cdd8] text-xs font-bold cursor-pointer ${
+                  state.adminFilterActiveOnly ? 'bg-[#1857b8] text-white border-[#1857b8]' : 'bg-white text-[#111625]'
+                }"
+              >
+                ${state.adminFilterActiveOnly ? 'Actifs uniquement' : 'Tous les comptes'}
+              </button>
+            </div>
+          </div>
+
+          ${
+            state.showApiKeyModal
+              ? `
+            <div class="no-print mb-5 p-4 rounded-2xl bg-blue-50/70 border border-blue-200">
+              <label for="admin-api-key-input" class="block text-xs font-extrabold text-[#111625] mb-1.5">
+                Clé API Gemini (gemini-3-flash-preview)
+              </label>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input
+                  id="admin-api-key-input"
+                  type="text"
+                  value="${escapeHtml(state.apiKey)}"
+                  placeholder="AIza..."
+                  class="flex-1 px-3.5 py-2 rounded-xl border border-[#c7cdd8] bg-white text-xs"
+                />
+                <button
+                  type="button"
+                  id="admin-save-key-btn"
+                  class="px-4 py-2 rounded-xl bg-[#1857b8] hover:bg-[#134696] text-white text-xs font-extrabold cursor-pointer"
+                >
+                  Enregistrer la clé
+                </button>
+              </div>
+            </div>
+          `
+              : ''
+          }
+
+          <div class="no-print flex items-center justify-between mb-3">
+            <h2 class="text-base font-extrabold text-[#111625]">Gestion des utilisateurs</h2>
+            <button
+              type="button"
+              id="btn-toggle-add-user"
+              class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer"
+            >
+              + Ajouter utilisateur
+            </button>
+          </div>
+
+          ${
+            state.showAddUserForm
+              ? `
+            <form id="admin-add-user-form" class="no-print mb-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+              <input
+                id="new-user-name"
+                type="text"
+                required
+                placeholder="Utilisateur"
+                class="px-3 py-2 rounded-xl border border-[#c7cdd8] text-xs"
+              />
+              <input
+                id="new-user-pass"
+                type="text"
+                required
+                placeholder="Mot de passe"
+                class="px-3 py-2 rounded-xl border border-[#c7cdd8] text-xs"
+              />
+              <select id="new-user-role" class="px-3 py-2 rounded-xl border border-[#c7cdd8] text-xs bg-white">
+                <option value="user">Utilisateur</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button
+                type="submit"
+                class="px-4 py-2 rounded-xl bg-[#1857b8] text-white text-xs font-bold cursor-pointer"
+              >
+                Créer
+              </button>
+            </form>
+          `
+              : ''
+          }
+
+          <div class="no-print space-y-2">
+            ${usersList
+              .map(
+                (u) => `
+              <div class="p-3 rounded-2xl border border-slate-200 bg-white flex items-center justify-between gap-2">
+                <div>
+                  <span class="font-bold text-sm text-[#111625]">${escapeHtml(u.username)}</span>
+                  <span class="ml-2 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-[#5a6272]">${escapeHtml(u.role)}</span>
+                  ${
+                    u.frozen
+                      ? `<span class="ml-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700">Suspendu</span>`
+                      : ''
+                  }
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-toggle-freeze-id="${escapeHtml(u.id)}"
+                    class="px-3 py-1 rounded-xl border border-slate-300 hover:bg-slate-50 text-xs font-bold cursor-pointer"
+                  >
+                    ${u.frozen ? 'Activer' : 'Suspendre'}
+                  </button>
+                </div>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+
+          ${renderSavedFichesModalHtml()}
+        </section>
+      `;
+    }
+
+    /**
+     * Attaches Admin view listeners.
+     */
+    function attachAdminListeners() {
+      const logoutBtn = document.getElementById('admin-logout-btn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+          state.currentUser = null;
+          state.isAdmin = false;
+          state.showReadyFichesModal = false;
+          state.openedFromReadyFiches = false;
+          writeSessionToStorage(null);
+          navigateTo('login');
+        });
+      }
+
+      const accueilBtn = document.getElementById('admin-go-accueil-btn');
+      if (accueilBtn) {
+        accueilBtn.addEventListener('click', () => {
+          state.showReadyFichesModal = false;
+          navigateTo('accueil');
+        });
+      }
+
+      const savedFichesBtn = document.getElementById('admin-saved-fiches-btn');
+      if (savedFichesBtn) {
+        savedFichesBtn.addEventListener('click', () => {
+          state.showReadyFichesModal = true;
+          window.renderApp();
+          void hydrateFromFirestore();
+        });
+      }
+
+      const keyBtn = document.getElementById('admin-key-btn');
+      if (keyBtn) {
+        keyBtn.addEventListener('click', () => {
+          state.showApiKeyModal = !state.showApiKeyModal;
+          window.renderApp();
+        });
+      }
+
+      const saveKeyBtn = document.getElementById('admin-save-key-btn');
+      if (saveKeyBtn) {
+        saveKeyBtn.addEventListener('click', () => {
+          const val = document.getElementById('admin-api-key-input')?.value || '';
+          state.apiKey = val.trim();
+          writeApiKeyToStorage(state.apiKey);
+          state.showApiKeyModal = false;
+          showToast('Clé API enregistrée.', 'success');
+          window.renderApp();
+        });
+      }
+
+      const filterBtn = document.getElementById('admin-filter-btn');
+      if (filterBtn) {
+        filterBtn.addEventListener('click', () => {
+          state.adminFilterActiveOnly = !state.adminFilterActiveOnly;
+          window.renderApp();
+        });
+      }
+
+      const toggleAddUserBtn = document.getElementById('btn-toggle-add-user');
+      if (toggleAddUserBtn) {
+        toggleAddUserBtn.addEventListener('click', () => {
+          state.showAddUserForm = !state.showAddUserForm;
+          window.renderApp();
+        });
+      }
+
+      const addUserForm = document.getElementById('admin-add-user-form');
+      if (addUserForm) {
+        addUserForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const uname = (document.getElementById('new-user-name')?.value || '').trim();
+          const upass = (document.getElementById('new-user-pass')?.value || '').trim();
+          const urole = document.getElementById('new-user-role')?.value || 'user';
+          if (!uname || !upass) return;
+
+          state.users.push({
+            id: `u_${Date.now()}`,
+            username: uname,
+            password: upass,
+            role: urole,
+            frozen: false
+          });
+          writeUsersToStorage(state.users);
+          state.showAddUserForm = false;
+          showToast('Utilisateur ajouté.', 'success');
+          window.renderApp();
+        });
+      }
+
+      document.querySelectorAll('[data-toggle-freeze-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-toggle-freeze-id');
+          state.users = state.users.map((u) =>
+            String(u.id) === String(id) ? { ...u, frozen: !u.frozen } : u
+          );
+          writeUsersToStorage(state.users);
+          window.renderApp();
+        });
+      });
+
+      attachSavedFichesModalListeners();
+    }
+
+    /**
+     * Global render function exposed on window.renderApp().
+     */
+    window.renderApp = function renderApp() {
+      try {
+        const root = document.getElementById('app') || document.body;
+        if (!state.screen) state.screen = 'login';
+
+        let screenHtml = '';
+        if (state.screen === 'accueil') {
+          screenHtml = renderAccueilScreen();
+        } else if (state.screen === 'upload') {
+          screenHtml = renderUploadScreen();
+        } else if (state.screen === 'preview') {
+          screenHtml = renderPreviewScreen();
+        } else if (state.screen === 'admin') {
+          screenHtml = renderAdminScreen();
+        } else {
+          state.screen = 'login';
+          screenHtml = renderLoginScreen();
+        }
+
+        const toastHtml = `
+          <div
+            id="app-toast-banner"
+            class="${state.toastMessage ? getToastClass(state.toastType) : 'hidden'}"
+          >${escapeHtml(state.toastMessage)}</div>
+        `;
+
+        root.innerHTML = `
+          <main class="main-card">
+            ${screenHtml}
+          </main>
+          ${toastHtml}
+        `;
+
+        if (state.screen === 'login') attachLoginListeners();
+        else if (state.screen === 'accueil') attachAccueilListeners();
+        else if (state.screen === 'upload') attachUploadListeners();
+        else if (state.screen === 'preview') attachPreviewListeners();
+        else if (state.screen === 'admin') attachAdminListeners();
+      } catch (err) {
+        console.error('renderApp error recovery:', err);
+        const root = document.getElementById('app') || document.body;
+        root.innerHTML = `
+          <main class="main-card">
+            <div class="p-6 text-center">
+              <h1 class="text-lg font-extrabold text-[#111625] mb-2">Espace π</h1>
+              <p class="text-xs text-[#5a6272] mb-4">${escapeHtml(err.message || 'Récupération de l’interface')}</p>
+              <button
+                type="button"
+                onclick="state.screen='login'; window.renderApp();"
+                class="px-4 py-2 rounded-xl bg-[#1857b8] text-white text-xs font-bold cursor-pointer"
+              >
+                Recharger
+              </button>
+            </div>
+          </main>
+        `;
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        window.renderApp();
+        void hydrateFromFirestore();
+      });
+    } else {
+      window.renderApp();
+      void hydrateFromFirestore();
+    }
+  </script>
+</body>
+</html>
