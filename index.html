@@ -467,7 +467,7 @@
     }
   </style>
 </head>
-<body>
+  <body>
   <!-- Main Application Shell -->
   <main
     id="app-shell"
@@ -728,7 +728,7 @@
           .replace(/^«|»$/g, '')
           .trim();
       }
-
+      
       /**
        * Builds the target .htm filename:
        * - For Consolidation: "Consolidation <number>.htm"
@@ -914,7 +914,8 @@
           window.renderApp();
         }
       }
-  /**
+
+      /**
        * Saves or updates a user in localStorage and Firestore.
        */
       async function saveUserToStore(userObj) {
@@ -1050,8 +1051,8 @@
             console.warn('Firestore save fiche warning:', err);
           }
         }
-      }
-
+                   }
+                  
       /**
        * Deletes a saved worksheet record from Firestore and localStorage.
        */
@@ -1324,7 +1325,8 @@
           reader.readAsDataURL(file);
         });
       }
- /**
+
+      /**
        * Strips Arabic characters so extracted worksheet fields remain strictly in French.
        */
       function stripArabic(rawText) {
@@ -1478,8 +1480,8 @@
         }
 
         return slides;
-      }
-
+    }
+     
       /**
        * Local fallback extractor for standard lesson slides when no API key is set or Gemini fails.
        */
@@ -1735,7 +1737,8 @@
             }
           })
         });
-if (!response.ok) {
+
+        if (!response.ok) {
           var errText = await response.text();
           throw new Error('HTTP ' + response.status + ' (' + primaryModel + '): ' + errText);
         }
@@ -1820,8 +1823,7 @@ if (!response.ok) {
             }
           })
         });
-
-        if (!response.ok) {
+    if (!response.ok) {
           var errText = await response.text();
           throw new Error('HTTP ' + response.status + ' (' + primaryModel + '): ' + errText);
         }
@@ -1974,7 +1976,31 @@ if (!response.ok) {
       }
 
       /**
-       * Builds a complete standalone editable .htm document with direct contenteditable editing and a print button.
+       * Prepares a clean cloned HTML snippet of the worksheet sheet with all editable
+       * cells explicitly set to contenteditable="true" so the saved standalone .htm file
+       * is immediately editable when opened in any browser.
+       */
+      function prepareEditableSheetCloneHtml(sheetEl) {
+        if (!sheetEl) return '';
+        var clone = sheetEl.cloneNode(true);
+        clone.id = 'fiche-editable-sheet';
+        clone.classList.add('fiche-edit-active');
+        clone.setAttribute('data-locked', 'false');
+
+        var editableCells = clone.querySelectorAll('.fiche-editable-cell, [contenteditable]');
+        for (var i = 0; i < editableCells.length; i++) {
+          editableCells[i].setAttribute('contenteditable', 'true');
+          editableCells[i].setAttribute('spellcheck', 'false');
+        }
+        return clone.outerHTML;
+      }
+
+      /**
+       * Builds a complete standalone editable .htm document with:
+       * - Full inline editing enabled by default (all worksheet cells contenteditable="true")
+       * - Clear visual focus/hover editing indicators
+       * - Active 'Édition activée / Verrouiller' toggle button
+       * - Prominent 'Imprimer / Enregistrer en PDF' button calling window.print()
        */
       function buildStandaloneEditableHtmDocument(sheetHtml, docTitle) {
         var safeTitle = escapeHtml(docTitle || 'Fiche Pédagogique');
@@ -1991,9 +2017,12 @@ if (!response.ok) {
           '  <style>\n' +
           '    * { box-sizing: border-box; }\n' +
           '    body { margin: 0; padding: 16px; background: #ffffff; color: #0b0d12; font-family: "Comic Sans MS", "Segoe UI", cursive, sans-serif; }\n' +
-          '    .htm-action-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 0 auto 14px auto; padding: 10px 14px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; max-width: 920px; font-family: "Segoe UI", sans-serif; }\n' +
-          '    .htm-btn { font-family: "Segoe UI", sans-serif; font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 8px; border: 1px solid #1857b8; background: #1857b8; color: #ffffff; cursor: pointer; }\n' +
-          '    .htm-btn-light { background: #ffffff; color: #0b0d12; border-color: #94a3b8; }\n' +
+          '    .htm-action-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 0 auto 14px auto; padding: 12px 16px; background: #f1f5f9; border: 1.5px solid #cbd5e1; border-radius: 14px; max-width: 920px; font-family: "Segoe UI", sans-serif; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06); }\n' +
+          '    .htm-btn { font-family: "Segoe UI", sans-serif; font-size: 14px; font-weight: 700; padding: 9px 18px; border-radius: 10px; border: 1.5px solid #1857b8; background: #1857b8; color: #ffffff; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }\n' +
+          '    .htm-btn:hover { background: #134696; }\n' +
+          '    .htm-btn-edit { background: #fef3c7; color: #92400e; border-color: #f59e0b; }\n' +
+          '    .htm-btn-locked { background: #ffffff; color: #0b0d12; border-color: #94a3b8; }\n' +
+          '    .htm-hint { width: 100%; text-align: center; font-size: 12px; color: #475569; margin-top: 2px; }\n' +
           '    .fiche-sheet, .fiche-sheet *, .fiche-table, .fiche-table th, .fiche-table td { font-family: "Comic Sans MS", "Segoe UI", cursive, sans-serif; }\n' +
           '    .fiche-script-accent, .fiche-cursive-italic { font-family: "Caveat", "Dancing Script", "Comic Sans MS", "Segoe UI", cursive, sans-serif; }\n' +
           '    .fiche-sheet { max-width: 920px; margin: 0 auto; background: #ffffff; color: #0b0d12; border: none; font-size: 13px; font-weight: 600; line-height: 1.3; }\n' +
@@ -2006,29 +2035,51 @@ if (!response.ok) {
           '    .fiche-row-ouverture td, .fiche-row-ouverture th { background-color: #4f81bd; color: #ffffff; }\n' +
           '    .fiche-ouverture-band, .fiche-side-band { text-align: center; vertical-align: middle !important; }\n' +
           '    .fiche-row-white, .fiche-row-white td { background-color: #ffffff; color: #0b0d12; font-weight: 700; }\n' +
+          '    .fiche-editable-cell[contenteditable="true"] { outline: none; border-radius: 4px; transition: background-color 0.15s ease, box-shadow 0.15s ease; }\n' +
+          '    .fiche-edit-active .fiche-editable-cell[contenteditable="true"]:hover, .fiche-edit-active .fiche-editable-cell[contenteditable="true"]:focus { background-color: rgba(24, 87, 184, 0.12); box-shadow: inset 0 0 0 1.5px rgba(24, 87, 184, 0.55); cursor: text; }\n' +
           '    .fiche-sig-row { display: flex; justify-content: space-between; padding-top: 24px; padding-left: 8px; padding-right: 8px; text-decoration: underline; font-weight: 700; }\n' +
-          '    @media print { @page { size: A4 portrait; margin: 8mm; } .htm-action-bar { display: none !important; } body { padding: 0 !important; margin: 0 !important; } .fiche-sheet { max-width: 100% !important; font-size: 11.5px !important; line-height: 1.25 !important; } .fiche-row-ouverture, .fiche-ouverture-band, .fiche-side-band { background-color: #4f81bd !important; color: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }\n' +
+          '    @media print { @page { size: A4 portrait; margin: 8mm; } .htm-action-bar { display: none !important; } body { padding: 0 !important; margin: 0 !important; } .fiche-editable-cell[contenteditable="true"] { background-color: transparent !important; box-shadow: none !important; } .fiche-sheet { max-width: 100% !important; font-size: 11.5px !important; line-height: 1.25 !important; } .fiche-row-ouverture, .fiche-ouverture-band, .fiche-side-band { background-color: #4f81bd !important; color: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }\n' +
           '  </style>\n' +
           '</head>\n' +
           '<body>\n' +
           '  <div class="htm-action-bar">\n' +
-          '    <button type="button" class="htm-btn" onclick="window.print()">Imprimer</button>\n' +
-          '    <button type="button" class="htm-btn htm-btn-light" id="toggleEditableBtn" onclick="toggleEditableDoc()">Édition active (Cliquer pour verrouiller)</button>\n' +
+          '    <button type="button" class="htm-btn htm-btn-edit" id="toggleEditableBtn" onclick="toggleEditableDoc()">Édition activée / Verrouiller</button>\n' +
+          '    <button type="button" class="htm-btn" onclick="window.print()">Imprimer / Enregistrer en PDF</button>\n' +
+          '    <div class="htm-hint" id="editHintText">Cliquez directement sur n\'importe quelle case du tableau pour modifier le texte avant d\'imprimer.</div>\n' +
           '  </div>\n' +
           sheetHtml +
-          '\n  <script>\n' +
+          
+ '\n  <script>\n' +
           '    (function enableDocEditing() {\n' +
           '      var sheet = document.getElementById("fiche-editable-sheet");\n' +
           '      if (!sheet) return;\n' +
-          '      var editables = sheet.querySelectorAll("[contenteditable]");\n' +
-          '      editables.forEach(function(el) { el.setAttribute("contenteditable", "true"); });\n' +
+          '      sheet.classList.add("fiche-edit-active");\n' +
+          '      var editables = sheet.querySelectorAll(".fiche-editable-cell, [contenteditable]");\n' +
+          '      for (var i = 0; i < editables.length; i++) {\n' +
+          '        editables[i].setAttribute("contenteditable", "true");\n' +
+          '        editables[i].setAttribute("spellcheck", "false");\n' +
+          '      }\n' +
           '      window.toggleEditableDoc = function() {\n' +
-          '        var current = sheet.getAttribute("data-locked") === "true";\n' +
-          '        var nextLocked = !current;\n' +
+          '        var isLocked = sheet.getAttribute("data-locked") === "true";\n' +
+          '        var nextLocked = !isLocked;\n' +
           '        sheet.setAttribute("data-locked", nextLocked ? "true" : "false");\n' +
-          '        editables.forEach(function(el) { el.setAttribute("contenteditable", nextLocked ? "false" : "true"); });\n' +
+          '        if (nextLocked) {\n' +
+          '          sheet.classList.remove("fiche-edit-active");\n' +
+          '        } else {\n' +
+          '          sheet.classList.add("fiche-edit-active");\n' +
+          '        }\n' +
+          '        for (var j = 0; j < editables.length; j++) {\n' +
+          '          editables[j].setAttribute("contenteditable", nextLocked ? "false" : "true");\n' +
+          '        }\n' +
           '        var btn = document.getElementById("toggleEditableBtn");\n' +
-          '        if (btn) { btn.textContent = nextLocked ? "Verrouillé (Cliquer pour modifier)" : "Édition active (Cliquer pour verrouiller)"; }\n' +
+          '        var hint = document.getElementById("editHintText");\n' +
+          '        if (btn) {\n' +
+          '          btn.className = nextLocked ? "htm-btn htm-btn-locked" : "htm-btn htm-btn-edit";\n' +
+          '          btn.textContent = nextLocked ? "Verrouillé / Activer l\'édition" : "Édition activée / Verrouiller";\n' +
+          '        }\n' +
+          '        if (hint) {\n' +
+          '          hint.textContent = nextLocked ? "Document verrouillé. Cliquez sur « Activer l\'édition » pour modifier." : "Cliquez directement sur n\'importe quelle case du tableau pour modifier le texte avant d\'imprimer.";\n' +
+          '        }\n' +
           '      };\n' +
           '    })();\n' +
           '  <\/script>\n' +
@@ -2036,29 +2087,89 @@ if (!response.ok) {
           '</html>'
         );
       }
-/**
-       * Triggers download of a standalone editable .htm file named:
+
+      /**
+       * Triggers reliable dual-fallback download (Blob URL + Data URI fallback) of a standalone
+       * editable .htm file named:
        * - "Consolidation <number>.htm" for Consolidation
        * - "<PPT_Title>.htm" for lesson fiches
        */
       function downloadFicheElementAsHtm(sheetEl, ficheObj, sectionName) {
-        if (!sheetEl) return;
+        if (!sheetEl) return false;
         var fileName = buildFicheHtmFileName(ficheObj, sectionName);
+        var editableSheetHtml = prepareEditableSheetCloneHtml(sheetEl);
         var htmlContent = buildStandaloneEditableHtmDocument(
-          sheetEl.outerHTML,
+          editableSheetHtml,
           getFicheIdentityTitle(ficheObj, sectionName)
         );
 
-        var blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-        var url = URL.createObjectURL(blob);
-        var link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-        showToast('Fichier "' + fileName + '" enregistré et téléchargé.', 'success');
+        var downloaded = false;
+
+        // Primary method: Blob + ObjectURL anchor download
+        try {
+          var blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+          if (window.navigator && typeof window.navigator.msSaveOrOpenBlob === 'function') {
+            window.navigator.msSaveOrOpenBlob(blob, fileName);
+            downloaded = true;
+          } else {
+            var url = URL.createObjectURL(blob);
+            var link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            link.rel = 'noopener';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(function () {
+              try {
+                URL.revokeObjectURL(url);
+              } catch (e) {}
+            }, 3000);
+            downloaded = true;
+          }
+        } catch (blobErr) {
+          console.warn('Blob download fallback triggered:', blobErr);
+        }
+
+        // Secondary fallback: UTF-8 Data URI anchor download for restrictive mobile WebViews
+        if (!downloaded) {
+          try {
+            var dataUri = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
+            var fallbackLink = document.createElement('a');
+            fallbackLink.href = dataUri;
+            fallbackLink.download = fileName;
+            fallbackLink.style.display = 'none';
+            document.body.appendChild(fallbackLink);
+            fallbackLink.click();
+            document.body.removeChild(fallbackLink);
+            downloaded = true;
+          } catch (uriErr) {
+            console.error('Data URI download failed:', uriErr);
+          }
+        }
+
+        if (downloaded) {
+          showToast('Fichier "' + fileName + '" enregistré et téléchargé.', 'success');
+        } else {
+          showToast('Impossible de déclencher le téléchargement sur ce navigateur.', 'error');
+        }
+        return downloaded;
+      }
+
+      /**
+       * Reliable print / PDF export trigger across desktop and mobile browsers.
+       */
+      function triggerReliablePrintPdf() {
+        try {
+          window.focus();
+          setTimeout(function () {
+            window.print();
+          }, 60);
+        } catch (err) {
+          console.warn('Print trigger warning:', err);
+          showToast('Utilisez le menu Imprimer / Enregistrer en PDF du navigateur.', 'info');
+        }
       }
 
       /**
@@ -2161,7 +2272,8 @@ if (!response.ok) {
           });
         }
       }
-  /**
+
+      /**
        * Switches active screen and re-renders synchronously via window.renderApp().
        */
       function navigateTo(nextScreen) {
@@ -2223,7 +2335,7 @@ if (!response.ok) {
           '        <svg class="w-6 h-6 text-[#b3bac6] shrink-0" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b3bac6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
           '          <circle cx="12" cy="8" r="4"></circle>' +
           '          <path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"></path>' +
-          '        </svg>' +
+           '        </svg>' +
           '        <input id="input-name" name="username" type="text" autocomplete="username" placeholder="الاسم" class="arabic-label w-full bg-transparent text-right text-[19px] font-semibold text-[#111625] placeholder-[#7d8594] focus:outline-none pr-3" style="width:100%;border:none;background:transparent;text-align:right;font-size:18px;font-weight:600;padding-right:12px;outline:none;" />' +
           '      </div>' +
           '    </div>' +
@@ -2358,7 +2470,7 @@ if (!response.ok) {
         });
       }
 
-  /**
+      /**
        * 2. 'accueil' — HUB SCREEN WITH TWO PRIMARY CARDS:
        * - Displays a top-left "Retour" button ONLY when state.isAdmin is true (navigates back to 'admin').
        * - Card 1: "générateur de fiche technique" -> chooses section -> 'upload'
@@ -2498,8 +2610,7 @@ if (!response.ok) {
           renderSavedFichesModalHtml() +
           '</section>'
         );
-      }
-
+        }
       /**
        * Attaches Accueil hub, admin Retour button, section chooser, ready fiches modal, and logout listeners.
        */
@@ -2560,7 +2671,8 @@ if (!response.ok) {
           });
         }
       }
- /**
+
+      /**
        * 3. 'upload' — FICHE TECHNIQUE DU COURS SCREEN
        */
       function renderUploadScreen() {
@@ -2810,8 +2922,7 @@ if (!response.ok) {
                 state.isAnalyzing = false;
                 navigateTo('preview');
                 return;
-              }
-
+  }
               var slides = state.parsedSlides;
               if (!slides || slides.length === 0) {
                 if (/\.pptx$/i.test(state.uploadedFile.name)) {
@@ -2860,10 +2971,11 @@ if (!response.ok) {
           });
         }
       }
-    /**
+
+      /**
        * Renders the action bar on 'preview':
        * - When openedFromSavedList is true: shows prominent "Télécharger PDF" and "Retour" (returns directly to "les fiches enregistrées" modal).
-       * - When openedFromSavedList is false: shows "Édition active", "Réinitialiser", "Enregistrer", and "Imprimer".
+       * - When openedFromSavedList is false: shows "Édition active", "Réinitialiser", "Enregistrer" (saves & downloads editable .htm), "Télécharger .htm", and "Télécharger PDF / Imprimer".
        */
       function renderPreviewToolbarHtml() {
         if (state.openedFromSavedList) {
@@ -2895,7 +3007,10 @@ if (!response.ok) {
           '    <span>Réinitialiser</span>' +
           '  </button>' +
           '  <button type="button" id="btn-save-edit-fiche" class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer" style="padding:6px 14px;border-radius:12px;background:#059669;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;">' +
-          '    <span>Enregistrer</span>' +
+          '    <span>Enregistrer (.htm)</span>' +
+          '  </button>' +
+          '  <button type="button" id="btn-download-htm-direct" class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer" style="padding:6px 14px;border-radius:12px;background:#4f46e5;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;">' +
+          '    <span>Télécharger .htm</span>' +
           '  </button>' +
           '  <button type="button" id="btn-print-fiche" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#1857b8] hover:bg-[#134696] text-white text-xs font-bold shadow-sm transition-colors cursor-pointer" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:12px;background:#1857b8;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;">' +
           '    <svg class="w-4 h-4" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -2903,7 +3018,7 @@ if (!response.ok) {
           '      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>' +
           '      <rect x="6" y="14" width="12" height="8"></rect>' +
           '    </svg>' +
-          '    <span>Imprimer</span>' +
+          '    <span>Imprimer / PDF</span>' +
           '  </button>' +
           '</div>'
         );
@@ -3086,25 +3201,7 @@ if (!response.ok) {
           '            </td>' +
           '            <td class="text-center fiche-editable-cell" ' + editableAttr + '>' +
           '              <div>Le livret des élèves</div>' +
-          '            </td>' +
-          '          </tr>' +
-          '          <tr>' +
-          '            <td class="fiche-side-band">' +
-          '              <div class="underline font-bold fiche-editable-cell" ' + editableAttr + '>Correction</div>' +
-          '              <div class="mt-3 underline font-bold fiche-editable-cell" ' + editableAttr + '>40 minutes</div>' +
-          '            </td>' +
-          '            <td class="fiche-editable-cell" ' + editableAttr + '>' +
-          '              <div>- Soutenir et encourager les élèves qui passent au tableau pour présenter et rédiger leurs réponses</div>' +
-          '              <div>- Solliciter les élèves à verbaliser leurs réponses en donnant des arguments clairs et bien structurés</div>' +
-          '              <div>- Corriger les fautes commises au tableau en donnant des explications simples claires</div>' +
-          '            </td>' +
-          '            <td class="fiche-editable-cell" ' + editableAttr + '>' +
-          '              <div>- Participer positivement dans la correction des exercices sur le tableau en justifiant les étapes du raisonnement</div>' +
-          '              <div>- Recopier le corrigé dans le livret</div>' +
-          '            </td>' +
-          '            <td class="text-center fiche-editable-cell" ' + editableAttr + '>' +
-          '              <div>Le livret des élèves</div>' +
-          '              <div>+</div>' +
+            '              <div>+</div>' +
           '              <div>Tableau</div>' +
           '            </td>' +
           '          </tr>' +
@@ -3119,7 +3216,8 @@ if (!response.ok) {
           '</section>'
         );
       }
-   /**
+
+      /**
        * 4. 'preview' — STANDALONE WORKSHEET PREVIEW SCREEN
        */
       function renderPreviewScreen() {
@@ -3241,7 +3339,6 @@ if (!response.ok) {
             '    <div>Le livret des élèves</div>' +
             '  </td>' +
             '</tr>';
-
         return (
           '<section class="screen-enter flex-1 flex flex-col justify-between">' +
           '  <div>' +
@@ -3325,7 +3422,7 @@ if (!response.ok) {
           '        </thead>' +
           '        <tbody>' +
           firstContentRowHtml +
-'          <tr>' +
+           '          <tr>' +
           '            <td class="text-center">' +
           '              <div class="underline font-bold fiche-editable-cell" ' + editableAttr + '>Lexique</div>' +
           '              <div class="fiche-cursive-italic fiche-editable-cell" ' + editableAttr + '>2 min</div>' +
@@ -3469,7 +3566,7 @@ if (!response.ok) {
           '            </td>' +
           '          </tr>' +
           '          <tr>' +
-          '            <td class="fiche-side-band">' +
+           '            <td class="fiche-side-band">' +
           '              <div class="underline font-bold fiche-editable-cell" ' + editableAttr + '>Pratique autonome et défi</div>' +
           '              <div class="fiche-cursive-italic fiche-editable-cell" ' + editableAttr + '>' + formatGuillemetsBoldUnderline('« Je fais »') + '</div>' +
           '              <div class="fiche-cursive-italic fiche-editable-cell" ' + editableAttr + '>' + formatGuillemetsBoldUnderline('« Encourager les élèves à pratiquer seuls pour maîtriser la compétence »') + '</div>' +
@@ -3504,7 +3601,7 @@ if (!response.ok) {
           '            </td>' +
           '          </tr>' +
           '          <tr>' +
-'            <td class="fiche-side-band">' +
+          '            <td class="fiche-side-band">' +
           '              <div class="underline font-bold fiche-editable-cell" ' + editableAttr + '>Clôture</div>' +
           '              <div class="fiche-cursive-italic fiche-editable-cell" ' + editableAttr + '>' + formatGuillemetsBoldUnderline("« Synthétiser ce qui a été appris et s'assurer de la compréhension finale »") + '</div>' +
           '              <div class="mt-1 underline font-bold fiche-editable-cell" ' + editableAttr + '>5 minutes</div>' +
@@ -3569,6 +3666,7 @@ if (!response.ok) {
         var toggleEditBtn = document.getElementById('btn-toggle-edit-fiche');
         var resetEditBtn = document.getElementById('btn-reset-edit-fiche');
         var saveEditBtn = document.getElementById('btn-save-edit-fiche');
+        var downloadHtmDirectBtn = document.getElementById('btn-download-htm-direct');
 
         var goBackToSavedFiches = function () {
           state.openedFromSavedList = false;
@@ -3656,14 +3754,21 @@ if (!response.ok) {
 
         if (returnToSavedBtn) {
           returnToSavedBtn.addEventListener('click', goBackToSavedFiches);
-        }
-
-        if (downloadPdfBtn) {
+               if (downloadPdfBtn) {
           downloadPdfBtn.addEventListener('click', function () {
-            window.print();
+            syncEditedFicheFromDom();
+            triggerReliablePrintPdf();
           });
         }
-if (toggleEditBtn) {
+
+        if (printBtn) {
+          printBtn.addEventListener('click', function () {
+            syncEditedFicheFromDom();
+            triggerReliablePrintPdf();
+          });
+        }
+
+        if (toggleEditBtn) {
           toggleEditBtn.addEventListener('click', function () {
             syncEditedFicheFromDom();
             state.ficheEditEnabled = !state.ficheEditEnabled;
@@ -3683,6 +3788,17 @@ if (toggleEditBtn) {
               state.generatedFiche = JSON.parse(JSON.stringify(state.originalFicheBackup));
               window.renderApp();
               showToast('Modifications réinitialisées.', 'info');
+            }
+          });
+        }
+
+        if (downloadHtmDirectBtn) {
+          downloadHtmDirectBtn.addEventListener('click', function () {
+            syncEditedFicheFromDom();
+            var sectionName = state.selectedSection || 'premier pages';
+            var sheetEl = document.getElementById('fiche-editable-sheet');
+            if (sheetEl) {
+              downloadFicheElementAsHtm(sheetEl, state.generatedFiche, sectionName);
             }
           });
         }
@@ -3711,11 +3827,12 @@ if (toggleEditBtn) {
               updatedAt: new Date().toISOString()
             };
 
-            await persistSavedFicheRecord(record);
+            // Trigger immediate download while user gesture is active, then persist to store
             var sheetEl = document.getElementById('fiche-editable-sheet');
             if (sheetEl) {
               downloadFicheElementAsHtm(sheetEl, state.generatedFiche, sectionName);
             }
+            await persistSavedFicheRecord(record);
           });
         }
       }
@@ -3766,11 +3883,10 @@ if (toggleEditBtn) {
                     '    </button>' +
                     '  </div>' +
                     '</div>'
-                  );
+                  )
                 })
                 .join('');
-
-        return (
+                     return (
           '<section class="screen-enter flex-1 flex flex-col no-print">' +
           '  <div class="flex items-center justify-between px-1 pt-1 mb-3 gap-2" style="display:flex;align-items:center;justify-content:space-between;padding:4px 4px 0 4px;margin-bottom:12px;gap:8px;">' +
           '    <button type="button" id="admin-logout-btn" title="Déconnexion vers Connexion" aria-label="Déconnexion vers Connexion" class="w-12 h-12 rounded-full border-[2.5px] border-[#e03a3e] bg-white hover:bg-rose-50 active:scale-95 text-[#e03a3e] flex items-center justify-center transition-all cursor-pointer shadow-sm shrink-0" style="width:48px;height:48px;border-radius:9999px;border:2.5px solid #e03a3e;background:#ffffff;color:#e03a3e;display:flex;align-items:center;justify-content:center;cursor:pointer;">' +
@@ -3874,7 +3990,7 @@ if (toggleEditBtn) {
           '</section>'
         );
       }
-/**
+      /**
        * Attaches admin screen event listeners.
        */
       function attachAdminListeners() {
@@ -4047,7 +4163,8 @@ if (toggleEditBtn) {
           });
         }
       }
- /**
+
+      /**
        * Global synchronous window.renderApp orchestrator managing all 5 screens
        * ('login', 'accueil', 'upload', 'preview', 'admin').
        */
@@ -4070,9 +4187,8 @@ if (toggleEditBtn) {
           } else {
             state.screen = 'login';
             html = renderLoginScreen();
-          }
-
-          container.innerHTML = html;
+    }
+    container.innerHTML = html;
 
           if (state.screen === 'login') {
             attachLoginListeners();
@@ -4128,3 +4244,7 @@ if (toggleEditBtn) {
   </script>
 </body>
 </html>
+        
+    
+        
+        
